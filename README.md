@@ -5,8 +5,6 @@ Os exemplos serão feitos em React.
 
 versão atual: 1.0.0
 
-[teste](#asd)
-
 ## Instalação
 `npm i la-form-validator`
 
@@ -19,6 +17,7 @@ import validator from 'la-form-validator'
 ```
 
 ## Como usar
+Veja o exemplo completo [aqui](#Exemplo-completo)
 A validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
 ```javascript
 function App() {
@@ -109,4 +108,23 @@ A mensagem de erro virá: `O campo "Nome de usuário" é obrigatório`
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 
-## asd
+## Exemplo completo
+```javascript
+const onSubmitForm = e => {
+  e.preventDefault()
+  console.log(e.target)
+  const fd = new FormData(e.target)
+  const body = validator.getBodyObject(fd)
+  const rules = {
+    name: [validator.required(), validator.minLength(3), validator.maxLength(50)],
+    email: [validator.required(), validator.isEmail(), validator.minLength(4), validator.maxLength(50)],
+    password: [validator.required(), validator.minLength(8), validator.maxLength(32)]
+  }
+  const dictionary = {
+    name: 'Nome',
+    email: 'Email',
+    password: 'Senha'
+  }
+  const res = validator.doValidations({rules, dictionary}, body)
+}
+```
