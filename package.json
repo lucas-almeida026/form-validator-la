@@ -1,0 +1,29 @@
+{
+  "name": "la-form-validator",
+  "version": "1.0.0",
+  "description": "Validador de formulários em javascript para HTML forms",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon teste.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucas-almeida026/la-form-validator.git"
+  },
+  "keywords": [
+    "form",
+    "validator",
+    "form-validator",
+    "validar",
+    "formulário",
+    "validador",
+    "verificar-formulário"
+  ],
+  "author": "lucas_almeida",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lucas-almeida026/la-form-validator/issues"
+  },
+  "homepage": "https://github.com/lucas-almeida026/la-form-validator#readme"
+}
