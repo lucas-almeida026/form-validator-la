@@ -92,7 +92,7 @@ const rules = {
 }
 ```
 
-## Dictionary
+## Definindo o dicionário (opcional)
 ### Para que serve e como o usar o dicionário das opções de validação
 O dicionário das opções de validação serve para personalizar a mensagem de erro.
 Exemplo: Se o _name_ do _input_ é "userName" a mensagem de erro viria assim `O campo "userName" é obrigatório`
