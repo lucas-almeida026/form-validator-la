@@ -3,8 +3,6 @@
 la-form-validator é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
-versão atual: 1.0.0
-
 
 ## Instalação
 `npm i la-form-validator`
@@ -18,7 +16,7 @@ import validator from 'la-form-validator'
 ```
 
 ## Como usar
-Veja o exemplo completo [aqui](#Exemplo-completo)
+Veja o exemplo completo [aqui](#Exemplo-completo) (último tópico)
 
 A validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
 ```javascript
