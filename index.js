@@ -34,9 +34,9 @@ const isJSON = () => value => {
 
 const getBodyObject = formData => Object.fromEntries(Array.from(formData))
 
-const doValidations = (validationsConfig, body) => {
-  const rules = Object.entries(validationsConfig.rules)
-  const dictionary = !!validationsConfig.dictionary ? validationsConfig.dictionary : false
+const doValidations = (validationConfigs, body) => {
+  const rules = Object.entries(validationConfigs.rules)
+  const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
   return rules.reduce((acm, curr) => {
     const value = body[curr[0]]
     if(!acm.error) return curr[1].reduce((acm2, curr2) => {
