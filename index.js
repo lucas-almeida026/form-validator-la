@@ -18,9 +18,20 @@ const isEmail = () => value =>
   'isEmail':
   value.includes('@') && value.length >= 3 ? {error: false} : {error: true, message: `O campo # deve ser um email`}
 
+const isJSON = () => value => {
+  try{
+    JSON.parse(string)
+  }
+  catch(err){
+    return {error: true, message: `O valor informado não é um JSON`}
+  }
+  return {error: false}
+}
+
+const getObjectFromForm = formData => Object.fromEntries(Array.from(formData))
+
 const doValidations = (validationsConfig, body) => {
   const rules = Object.entries(validationsConfig.rules)
-  console.log(validationsConfig)
   const dictionary = !!validationsConfig.dictionary ? validationsConfig.dictionary : false
   return rules.reduce((acm, curr) => {
     const value = body[curr[0]]
@@ -50,4 +61,6 @@ module.exports = {
   minLength,
   maxLength,
   isEmail,
+  isJSON,
+  getObjectFromForm
 }
