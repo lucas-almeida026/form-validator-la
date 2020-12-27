@@ -107,6 +107,35 @@ const dictionary = {
 ```
 Utilizando o dicionário a menssagem de erro vira: `O campo "Nome de usuário" é obrigatório`
 
+## Raw error
+Caso a menssagem de erro padrão não seja a que você deseja basta utilizar os valores _raw_ para formar sua própria mensagem
+```javascript
+//Exemplo
+const res = {
+  error: true,
+  message: 'O campo "Email" não é um email',
+  raw: ['email', 'isEmail']
+}
+const myMessage = `O campo marcado com "*" tem que ser um email`
+alert(myMessage)
+```
+<br/>
+
+## Funções de validação:
+
+* required => não recebe valor, retorna error object
+* minLength => recebe o valor mínimo, retorna error object
+* maxLength => recebe o valor máximo, retorna error object
+* isEmail => não recebe valor, retorna error object
+* isJSON => não recebe valor, retorna error object
+
+## Funções complementares
+
+* getBodyObject => recebe instância de FormData, retorna body object
+* doValidations => recebe [validationConfigs, body], retorna error object
+
+<br/>
+
 ## Exemplo completo
 ```javascript
 const onSubmitForm = e => {
@@ -126,20 +155,6 @@ const onSubmitForm = e => {
   }
   const res = validator.doValidations({rules, dictionary}, body)
 }
-```
-
-## Raw error
-Caso a menssagem de erro padrão não seja a que você deseja basta utilizar os valores _raw_ para formar sua própria mensagem
-```javascript
-//Exemplo
-//Objeto de resposta:
-const res = {
-  error: true,
-  message: 'O campo "Email" não é um email',
-  raw: ['email', 'isEmail']
-}
-const myMessage = `O campo marcado com "*" tem que ser um email`
-alert(myMessage)
 ```
 
 ## License

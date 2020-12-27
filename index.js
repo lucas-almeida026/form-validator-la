@@ -26,7 +26,7 @@ const isJSON = () => value => {
       JSON.parse(value)
     }
     catch(err){
-      return {error: true, message: `O valor informado não é um JSON`}
+      return {error: true, message: `O campo # deve ser um JSON`}
     }
     return {error: false}
   }
