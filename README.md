@@ -18,6 +18,7 @@ import validator from 'la-form-validator'
 
 ## Como usar
 Veja o exemplo completo [aqui](#Exemplo-completo)
+
 A validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
 ```javascript
 function App() {
@@ -103,10 +104,7 @@ const dictionary = {
   userName: "Nome de usuário"
 }
 ```
-A mensagem de erro virá: `O campo "Nome de usuário" é obrigatório`
-
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
+Utilizando o dicionário a menssagem de erro vira: `O campo "Nome de usuário" é obrigatório`
 
 ## Exemplo completo
 ```javascript
@@ -128,3 +126,20 @@ const onSubmitForm = e => {
   const res = validator.doValidations({rules, dictionary}, body)
 }
 ```
+
+## Raw error
+Caso a menssagem de erro padrão não seja a que você deseja basta utilizar os valores _raw_ para formar sua própria mensagem
+```javascript
+//Exemplo
+//Objeto de resposta:
+const res = {
+  error: true,
+  message: 'O campo "Email" não é um email',
+  raw: ['email', 'isEmail']
+}
+const myMessage = `O campo marcado com "*" tem que ser um email`
+alert(myMessage)
+```
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
