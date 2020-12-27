@@ -60,6 +60,7 @@ const onSubmitForm = e => {
 ## Respostas
 ### Nehum erro de validação:
 Retorna um objeto vazio: `{}`
+
 Para obter o valor booleano utilize `!!Object.keys(result).length`
 
 ### Algum erro de validação:
@@ -119,7 +120,7 @@ alert(myMessage)
 ```
 <br/>
 
-## Funções de validação:
+### Funções de validação:
 
 * required => não recebe valor, retorna error object
 * minLength => recebe o valor mínimo, retorna error object
@@ -127,7 +128,7 @@ alert(myMessage)
 * isEmail => não recebe valor, retorna error object
 * isJSON => não recebe valor, retorna error object
 
-## Funções complementares
+### Funções complementares:
 
 * getBodyObject => recebe instância de FormData, retorna body object
 * doValidations => recebe [validationConfigs, body], retorna error object
