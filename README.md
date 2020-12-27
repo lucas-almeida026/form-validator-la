@@ -5,6 +5,8 @@ Os exemplos serão feitos em React.
 
 versão atual: 1.0.0
 
+[teste](#asd)
+
 ## Instalação
 `npm i la-form-validator`
 
@@ -106,3 +108,5 @@ A mensagem de erro virá: `O campo "Nome de usuário" é obrigatório`
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
+
+## asd
