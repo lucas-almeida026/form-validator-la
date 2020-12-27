@@ -97,7 +97,7 @@ const rules = {
 O dicionário das opções de validação serve para personalizar a mensagem de erro.
 Exemplo: Se o _name_ do _input_ é "userName" a mensagem de erro viria assim `O campo "userName" é obrigatório`
 Utilizando o seguinte dicionário 
-```
+```javascript
 const dictionary = {
   userName: "Nome de usuário"
 }
