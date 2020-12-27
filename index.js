@@ -19,13 +19,17 @@ const isEmail = () => value =>
   value.includes('@') && value.length >= 3 ? {error: false} : {error: true, message: `O campo # deve ser um email`}
 
 const isJSON = () => value => {
-  try{
-    JSON.parse(string)
+  if(value === '__myRawValue__'){
+    return 'isJSON'
+  }else{
+    try{
+      JSON.parse(value)
+    }
+    catch(err){
+      return {error: true, message: `O valor informado não é um JSON`}
+    }
+    return {error: false}
   }
-  catch(err){
-    return {error: true, message: `O valor informado não é um JSON`}
-  }
-  return {error: false}
 }
 
 const getBodyObject = formData => Object.fromEntries(Array.from(formData))
