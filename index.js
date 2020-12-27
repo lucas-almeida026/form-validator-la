@@ -28,7 +28,7 @@ const isJSON = () => value => {
   return {error: false}
 }
 
-const getObjectFromForm = formData => Object.fromEntries(Array.from(formData))
+const getBodyObject = formData => Object.fromEntries(Array.from(formData))
 
 const doValidations = (validationsConfig, body) => {
   const rules = Object.entries(validationsConfig.rules)
@@ -62,5 +62,5 @@ module.exports = {
   maxLength,
   isEmail,
   isJSON,
-  getObjectFromForm
+  getBodyObject
 }
