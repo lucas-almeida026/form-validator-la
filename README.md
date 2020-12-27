@@ -18,7 +18,7 @@ import validator from 'la-form-validator'
 
 ## Como usar
 A validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
-```
+```javascript
 function App() {
   return (
     <div>
@@ -76,7 +76,7 @@ Retorna o primeiro erro da lista no seguinte formato:
 ### Regras disponíveis:
  * required => campo obrigatório
  * minLength => obrigatório conter um número mínimo de caracteres
- * maxLength => obrigatório conter um número de acracteres menor que o limite
+ * maxLength => obrigatório conter um número de caracteres menor que o limite
  * isEmail => obrigatório ser um email
  * isJSON (Beta) => obrigatório ser uma _string_ JSON
 
@@ -84,12 +84,25 @@ Retorna o primeiro erro da lista no seguinte formato:
 
 ### Como selecionar uma regra:
 No objeto de regras crie uma chave com o nome do campo (mesmo nome do parêmatro _name_ do _input_) e passe um array como valor contendo as regras do campo em questão.
+As regras são executadas em ordem sequencial da esquerda para a direita, portanto prefira começar com _required_.
 ```javascript
 //Exemplo
 const rules = {
   fieldName: [validator.required(), validator.minLength(3)]
 }
 ```
+
+## Dictionary
+### Para que serve e como o usar o dicionário das opções de validação
+O dicionário das opções de validação serve para personalizar a mensagem de erro.
+Exemplo: Se o _name_ do _input_ é "userName" a mensagem de erro viria assim `O campo "userName" é obrigatório`
+Utilizando o seguinte dicionário 
+```
+const dictionary = {
+  userName: "Nome de usuário"
+}
+```
+A mensagem de erro virá: `O campo "Nome de usuário" é obrigatório`
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
