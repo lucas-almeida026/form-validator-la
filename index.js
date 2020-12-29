@@ -1,24 +1,38 @@
-const required = () => value => 
-  value === '__myRawValue__' ?
+const required = () => value => {
+  if(typeof value !== 'string') throw new Error('validator.required() expects a string to validate')
+  return value === '__myRawValue__' ?
   'required':
   !!value.length ? {error: false} : {error: true, message: 'O campo # é obrigatório'}
+}
+  
 
-const minLength = min => value => 
-  value === '__myRawValue__' ?
+const minLength = min => value => {
+  if(typeof min !== 'number') throw new Error('validator.minLength(min) "min" must be a number')
+  if(typeof value !== 'string') throw new Error('validator.minLength() expects a string to validate')
+  return value === '__myRawValue__' ?
   'minLength':
   value.length >= min ? {error: false} : {error: true, message: `O campo # deve ter no mínimo ${min} caracteres`}
+}
+  
 
-const maxLength = max => value =>
-  value === '__myRawValue__' ? 
+const maxLength = max => value => {
+  if(typeof min !== 'number') throw new Error('validator.maxLength(max) "max" must be a number')
+  if(typeof value !== 'string') throw new Error('validator.maxLength() expects a string to validate')
+  return value === '__myRawValue__' ? 
   'maxLength':
   value.length <= max ? {error: false} : {error: true, message: `O campo # deve ter no máximo ${max} caracteres`}
+}
+  
 
-const isEmail = () => value => 
-  value === '__myRawValue__' ? 
+const isEmail = () => value => {
+  if(typeof value !== 'string') throw new Error('validator.isEmail() expects a string to validate')
+  return value === '__myRawValue__' ? 
   'isEmail':
   value.includes('@') && value.length >= 3 ? {error: false} : {error: true, message: `O campo # deve ser um email`}
+}  
 
 const isJSON = () => value => {
+  if(typeof value !== 'string') throw new Error('validator.isJSON() expects a string to validate')
   if(value === '__myRawValue__'){
     return 'isJSON'
   }else{
@@ -35,6 +49,9 @@ const isJSON = () => value => {
 const getBodyObject = formData => Object.fromEntries(Array.from(formData))
 
 const doValidations = (validationConfigs, body) => {
+  if(!validationConfigs) throw new Error('validator.doValidations() expect a object "validationConfigs"')
+  if(!body) throw new Error('validator.doValidations() expect a object "body"')
+  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect a object "validationConfigs" with a object "rules"')
   const rules = Object.entries(validationConfigs.rules)
   const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
   return rules.reduce((acm, curr) => {

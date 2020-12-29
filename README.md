@@ -80,7 +80,7 @@ Retorna o primeiro erro da lista no seguinte formato:
  * minLength => obrigatório conter um número mínimo de caracteres
  * maxLength => obrigatório conter um número de caracteres menor que o limite
  * isEmail => obrigatório ser um email
- * isJSON (Beta) => obrigatório ser uma _string_ JSON
+ * isJSON => obrigatório ser uma _string_ _JSON_
 
 * As funções minLength e maxLength devem ser chamadas passando o valor de comparação `minLength(min: number)`, `maxLength(max: number)`
 
