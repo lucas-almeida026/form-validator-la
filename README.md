@@ -5,7 +5,9 @@ Os exemplos serão feitos em React.
 
 
 ## Instalação
-`npm i form-validator-la`
+```bash
+npm i form-validator-la
+```
 
 ## Importando o pacote
 
@@ -81,8 +83,7 @@ Retorna o primeiro erro da lista no seguinte formato:
  * maxLength => obrigatório conter um número de caracteres menor que o valor limite
  * isEmail => obrigatório ser um email
  * isJSON => obrigatório ser uma _string_ _JSON_
-
-* As funções minLength e maxLength devem ser chamadas passando o valor de comparação `minLength(min: number)`, `maxLength(max: number)`
+ * passwordComplexiy => define regras para a criação de uma senha
 
 ### Como selecionar uma regra:
 No objeto de regras crie uma chave com o nome do campo (mesmo nome do parâmetro _name_ do _input_) e passe um array como valor contendo as regras do campo em questão.
@@ -129,18 +130,55 @@ alert(myMessage)
 ```
 <br/>
 
-### Funções de validação:
+## Funções de validação:
 
-* required => não recebe valor, retorna error object
-* minLength => recebe o valor mínimo do tipo _number_, retorna error object
-* maxLength => recebe o valor máximo do tipo _number_, retorna error object
-* isEmail => não recebe valor, retorna error object
-* isJSON => não recebe valor, retorna error object
+* #### required => não recebe valor, retorna um error object
+* #### minLength => recebe o valor mínimo do tipo _number_, retorna um error object
+* #### maxLength => recebe o valor máximo do tipo _number_, retorna um error object
+* #### isEmail => não recebe valor, retorna um error object
+* #### isJSON => não recebe valor, retorna um error object
+* #### passwordComplexity => recebe dois valores template do tipo _string_ e configs do tipo _object_, retorna um error object
 
-### Funções complementares:
 
-* getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
-* doValidations => recebe [validationConfigs, body], retorna error object
+## Funções complementares:
+
+* #### getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
+* #### doValidations => recebe [validationConfigs, body], retorna error object
+
+### Como implementar a funlção `passwordComplexity(template: string, configs?: object)`
+#### Escreva o template (obrigatório) e passe um objeto de configurações (opcional)
+#### Template:
+É uma string que deve ter obrigatoriamente 4 caracteres de comprimento onde deve-se definir as regras para a criação da senha, segue exemplos:
+```javascript
+/*
+caracteres reservados: ['a', 'A', '1', '*', '_']
+a = letras minúsculas
+A = letras maiúsculas
+1 = números
+* = caracteres especiais
+_ = nada
+*/
+const template = '____' // nenhuma regra
+const template = 'a___' // obrigatório letras minúsculas
+const template = 'aA__' // obrigatório letras minúsculas e maiúsculas
+const template = 'aA1_' // obrigatório letras minúsculas, maiúsculas e números
+const template = 'aA1*' // obrigatório letras minúsculas, maiúsculas, números e caracteres especiais
+const template = 'a1__' // obrigatório letras minúscuas e números
+const template = '1*Aa' // obrigatório números, caracteres especiais, letras maiúsculas e letras minúsculas
+// A ordem dos caracteres do template altera a ordem de verificação e a mensagem de erro, como no exemplo acima.
+```
+#### Configs:
+É um objeto que define duas propriedades `allowSpaces` e `allowKeyboardSequences` que por padrão são setadas como true.
+Veja como alterar as configurações padrão abaixo:
+```javascript
+const configs = {
+    allowSpaces: false // Não permite que o usuário crie uma senha com o caracter <space>
+    allowKeyboardSequences: false // Não permite que o usuário crie uma senha com sequências de teclado como: "asd", "123", "!@#", "zxc", etc.
+}
+const rules = {
+    password: [validator.passwordComplexity(template, configs)]
+}
+```
 
 <br/>
 
@@ -156,7 +194,7 @@ const onSubmitForm = e => {
   const rules = {
     name: [validator.required(), validator.minLength(3), validator.maxLength(50)],
     email: [validator.required(), validator.isEmail(), validator.minLength(4), validator.maxLength(50)],
-    password: [validator.required(), validator.minLength(8), validator.maxLength(32)]
+    password: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})]
   }
   const dictionary = {
     name: 'Nome',

@@ -5,25 +5,22 @@ const required = () => value => {
   !!value.length ? {error: false} : {error: true, message: 'O campo # é obrigatório'}
 }
   
-
 const minLength = min => value => {
-  if(typeof min !== 'number') throw new Error('validator.minLength(min) "min" must be a number')
+  if(typeof min !== 'number') throw new Error('validator.minLength(min) <min> must be a number')
   if(typeof value !== 'string') throw new Error('validator.minLength() expects a string to validate')
   return value === '__myRawValue__' ?
   'minLength':
   value.length >= min ? {error: false} : {error: true, message: `O campo # deve ter no mínimo ${min} caracteres`}
 }
   
-
 const maxLength = max => value => {
-  if(typeof min !== 'number') throw new Error('validator.maxLength(max) "max" must be a number')
+  if(typeof min !== 'number') throw new Error('validator.maxLength(max) <max> must be a number')
   if(typeof value !== 'string') throw new Error('validator.maxLength() expects a string to validate')
   return value === '__myRawValue__' ? 
   'maxLength':
   value.length <= max ? {error: false} : {error: true, message: `O campo # deve ter no máximo ${max} caracteres`}
 }
   
-
 const isEmail = () => value => {
   if(typeof value !== 'string') throw new Error('validator.isEmail() expects a string to validate')
   return value === '__myRawValue__' ? 
@@ -75,6 +72,41 @@ const doValidations = (validationConfigs, body) => {
   }, {})
 }
 
+const passwordComplexity = (template, configs = {allowSpaces: true}) => value => {
+  if(value === '__myRawValue__') return 'passwordComplexity'
+  //-----
+  if(typeof template !== 'string') throw new Error('validator.passwordComplexity(template) <template> must be a string')
+  if(typeof value !== 'string') throw new Error('validator.passwordComplexity() expects a string to validate')
+  if(template.length !== 4) throw new Error('validator.passwordComplexity(template) <template> invalid format, please review the documentation')
+  if(!!template.replace(/[_aA1*]/g, '').length) throw new Error('validator.passwordComplexity(template) <template> does not match any default options, please review the documentation')
+
+  if(!configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
+
+  const patterns = {
+    'a': value => !!value.replace(/[^a-z]/g, '').length,
+    'A': value => !!value.replace(/[^A-Z]/g, '').length,
+    '1': value => !!value.replace(/\D/g, '').length,
+    '*': value => !!value.replace(/[\w \0 \t \r \n \v \f]/g, '').length,
+  }
+
+  const patternsDictionary = {'a': 'letras minúsculas', 'A': 'letras maiúsculas', '1': 'números', '*': 'caracteres especiais'}
+
+  const rules = Array.from(template)
+    .filter(e => e !== '_')
+    .reduce((acm, curr) => [...acm, patterns[curr]], [])
+
+  const stringTypes = Array.from(template)
+    .filter(e => e !== '_')
+    .reduce((acm, curr) => [...acm, patternsDictionary[curr]], [])
+  
+  const joinMessage = strTypes => {
+    if(strTypes.length === 1) return strTypes[0]
+    if(strTypes.length === 2) return strTypes.join(' e ')
+    if(strTypes.length > 2) return `${strTypes.slice(0, strTypes.length - 1).join(', ')} e ${strTypes[strTypes.length - 1]}`
+  }
+
+  return rules.every(fn => fn(value)) ? {error: false} : {error: true, message: `O campo # exige a existência de ${joinMessage(stringTypes)}`}
+}
 
 module.exports = {
   doValidations,
@@ -83,5 +115,7 @@ module.exports = {
   maxLength,
   isEmail,
   isJSON,
+  passwordComplexity,
   getBodyObject
 }
+
