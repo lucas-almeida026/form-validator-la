@@ -1,5 +1,5 @@
 # form-validator-la
-
+### Este README contem _anchor links_ para uma melhor experiência leia este documento através do [git-hub](https://github.com/lucas-almeida026/form-validator-la/blob/main/README.md, 'Open with GitHub')
 form-validator-la é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
@@ -59,22 +59,6 @@ const onSubmitForm = e => {
   //Execute a operação
   const result = validator.doValidations(validationConfigs, body)
 ```
-## Respostas
-### Nehum erro de validação:
-Retorna um objeto vazio: `{}`
-
-Para obter o valor booleano utilize `!!Object.keys(result).length`
-
-### Um ou mais error de validação:
-Retorna o primeiro erro da lista no seguinte formato: 
-```
-//Exemplo de erro
-{
-  error: true,
-  message: "O campo "Teste" é obrigatório",
-  raw: ["teste", "required"]
-}
-```
 
 ## Definindo as regras de validação
 ### Regras disponíveis:
@@ -106,6 +90,22 @@ Utilizando o dicionário abaixo a menssagem de erro virá: `O campo "Nome de usu
 //}
 const dictionary = {
   userName: "Nome de usuário"
+}
+```
+## Respostas
+### Nehum erro de validação:
+Retorna um objeto vazio: `{}`
+
+Para obter o valor booleano utilize `!!Object.keys(result).length`
+
+### Um ou mais error de validação:
+Retorna o primeiro erro da lista no seguinte formato: 
+```
+//Exemplo de erro
+{
+  error: true,
+  message: "O campo "Teste" é obrigatório",
+  raw: ["teste", "required"]
 }
 ```
 
@@ -143,9 +143,11 @@ alert(myMessage)
 ## Funções complementares:
 
 * #### getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
-* #### doValidations => recebe [validationConfigs, body], retorna error object
+* #### doValidations => recebe [validationConfigs: object, body: object], retorna error object
+* #### doCombinedValidation => recebe _input_ _reference_, retorna um objeto com 3 funções [equalsTo, differentOf, includedIn], que recebem outra _input reference_ veja mais sobre [aqui](#Validações-Combinadas)
+* #### createCustomValidation => recebe [funcName: string, expression: function], retorna uma função, veja mais sobre [aqui](#Validações-Customizadas)
 
-### Como implementar a função `passwordComplexity(template: string, configs?: object)`
+### Implementando validação de complexidade de senha
 #### Escreva o template (obrigatório) e passe um objeto de configurações (opcional)
 #### Template:
 É uma string que deve ter obrigatoriamente 4 caracteres de comprimento onde deve-se definir as regras para a criação da senha, segue exemplos:
@@ -171,6 +173,7 @@ const template = '1*Aa' // obrigatório números, caracteres especiais, letras m
 É um objeto que define duas propriedades `allowSpaces` e `allowKeyboardSequences` que por padrão são setadas como true.
 Veja como alterar as configurações padrão abaixo:
 ```javascript
+const template = 'aA__'
 const configs = {
     allowSpaces: false, // Não permite que o usuário crie uma senha com o caracter <space>
     allowKeyboardSequences: false // Não permite que o usuário crie uma senha com sequências de teclado como: "asd", "123", "!@#", "zxc", etc.
@@ -178,6 +181,22 @@ const configs = {
 const rules = {
     password: [validator.passwordComplexity(template, configs)]
 }
+```
+
+## Validações combinadas
+A função de validações combinadas recebe uma _input reference_ (valor a ser comparado) e retorna um objeto com três funções [equalsTo, differentOf, includedIn];
+equalsTo recebe outra _input reference_ (valor para comparar) e retorna true ou false;
+differentOf recebe outra _input reference_ (valor para comparar) e retorna true ou false;
+includedIn recebe outra _input reference_ (valor para comparar) <obrigatório> e o parâmetro _flag_ <opcional, default = validator.includedInFlags.literal> que pode ser obtido a partir de `validator.includedInFlags` e retorna true ou false;
+validator.includedInFlags é um objeto que contém 3 valores [email, treated, literal]:
+* email: indicado para comparações de 1 ou 2 campos do tipo email
+* treated: compara os valores dos inputs aplicando as funções `String.trim()` e `String.toLowerCase()`
+* literal: valor padrão, compara os valores dos inputs sem nenhum tipo de tratamento
+
+### Aplicando validações combinadas
+```javascript
+const resultComb = validator.doCombinedValidation(document.getElementById('input1'))
+    .includedIn(document.getElementById('input2', validator.includedInFlags.treated)
 ```
 
 <br/>
