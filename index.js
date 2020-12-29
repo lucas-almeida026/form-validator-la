@@ -1,3 +1,9 @@
+const includedInFlags = {
+  email: 'email',
+  treated: 'treated',
+  literal: 'literal'
+}
+
 const required = () => value => {
   if(typeof value !== 'string') throw new Error('validator.required() expects a string to validate')
   return value === '__myRawValue__' ?
@@ -43,35 +49,6 @@ const isJSON = () => value => {
   }
 }
 
-const getBodyObject = formData => Object.fromEntries(Array.from(formData))
-
-const doValidations = (validationConfigs, body) => {
-  if(!validationConfigs) throw new Error('validator.doValidations() expect a object "validationConfigs"')
-  if(!body) throw new Error('validator.doValidations() expect a object "body"')
-  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect a object "validationConfigs" with a object "rules"')
-  const rules = Object.entries(validationConfigs.rules)
-  const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
-  return rules.reduce((acm, curr) => {
-    const value = body[curr[0]]
-    if(!acm.error) return curr[1].reduce((acm2, curr2) => {
-      const result = curr2(value)
-      if(result)
-        if(result.error && !acm2.error){
-          const message = dictionary 
-            ? result.message.replace('#', `"${dictionary[curr[0]]}"`) 
-            : result.message.replace('#', `"${curr[0]}"`)
-          return {
-            error: true, 
-            raw: [curr[0], curr2('__myRawValue__')],
-            message
-          }
-        }                   
-      return acm2
-    }, {})
-    return acm
-  }, {})
-}
-
 const passwordComplexity = (template, configs = {allowSpaces: true}) => value => {
   if(value === '__myRawValue__') return 'passwordComplexity'
   //-----
@@ -108,14 +85,93 @@ const passwordComplexity = (template, configs = {allowSpaces: true}) => value =>
   return rules.every(fn => fn(value)) ? {error: false} : {error: true, message: `O campo # exige a existência de ${joinMessage(stringTypes)}`}
 }
 
+const getBodyObject = formData => Object.fromEntries(Array.from(formData))
+
+const doValidations = (validationConfigs, body) => {
+  if(!validationConfigs) throw new Error('validator.doValidations() expect a object "validationConfigs"')
+  if(!body) throw new Error('validator.doValidations() expect a object "body"')
+  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect a object "validationConfigs" with a object "rules"')
+  const rules = Object.entries(validationConfigs.rules)
+  const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+  return rules.reduce((acm, curr) => {
+    const value = body[curr[0]]
+    if(!acm.error) return curr[1].reduce((acm2, curr2) => {
+      const result = curr2(value)
+      if(result)
+        if(result.error && !acm2.error){
+          const message = dictionary[curr[0]]
+            ? result.message.replace('#', `"${dictionary[curr[0]]}"`) 
+            : result.message.replace('#', `"${curr[0]}"`)
+          return {
+            error: true, 
+            raw: [curr[0], curr2('__myRawValue__')],
+            message
+          }
+        }                   
+      return acm2
+    }, {})
+    return acm
+  }, {})
+}
+
+const doCombinedValidation = (inputToCompare) => {
+  const throwErros = (input) => {
+    if(input === null) throw new Error('validator.doCombinedValidations(inputToCompare) <input> can not binputToCompare a <null> value')
+    if(typeof input !== 'object') throw new Error('validator.doCombinedValidations(inputToCompare) <input> must be a object')
+    if(!input.tagName) throw new Error('validator.doCombinedValidations(inputToCompare) <input> must be a HTML element reference')
+    if(input.tagName !== 'INPUT') throw new Error('validator.doCombinedValidations(inputToCompare) <input> must be a HTML input reference')
+  }
+  throwErros(inputToCompare)
+  const equalsTo = (comparisonInput) => {
+    throwErros(comparisonInput)
+    return comparisonInput.value === inputToCompare.value
+  }
+  const differentOf = (comparisonInput) => {
+    throwErros(comparisonInput)
+    return comparisonInput.value !== inputToCompare.value
+  }
+  const includedIn = (comparisonInput, flag = includedInFlags.literal) => {
+    throwErros(comparisonInput)
+    switch (flag){
+      case includedInFlags.literal:
+        return comparisonInput.value.includes(inputToCompare.value)
+      
+      case includedInFlags.email:
+        return comparisonInput.value
+          .trim()
+          .toLowerCase()
+          .includes(inputToCompare.value
+            .trim()
+            .toLowerCase()
+            .substring(0, inputToCompare.value.indexOf('@')))
+
+      case includedInFlags.treated:
+        return comparisonInput.value 
+          .trim()
+          .toLowerCase()
+          .includes(inputToCompare.value.trim().toLowerCase())
+      
+      default:
+        throw new Error('validator.doCombinedValidation(<input1>).includedIn(<input2>) Invalid flag')
+    }
+  }
+  return {
+    equalsTo,
+    differentOf,
+    includedIn,
+  }
+}
+
 module.exports = {
   doValidations,
+  doCombinedValidation,
   required,
   minLength,
   maxLength,
   isEmail,
   isJSON,
   passwordComplexity,
-  getBodyObject
+  getBodyObject,
+  includedInFlags
 }
 

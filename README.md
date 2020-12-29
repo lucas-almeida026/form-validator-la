@@ -188,7 +188,6 @@ import validator from 'form-validator-la'
 
 const onSubmitForm = e => {
   e.preventDefault()
-  console.log(e.target)
   const fd = new FormData(e.target)
   const body = validator.getBodyObject(fd)
   const rules = {
