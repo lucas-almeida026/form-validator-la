@@ -145,7 +145,7 @@ alert(myMessage)
 * #### getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
 * #### doValidations => recebe [validationConfigs, body], retorna error object
 
-### Como implementar a funlção `passwordComplexity(template: string, configs?: object)`
+### Como implementar a função `passwordComplexity(template: string, configs?: object)`
 #### Escreva o template (obrigatório) e passe um objeto de configurações (opcional)
 #### Template:
 É uma string que deve ter obrigatoriamente 4 caracteres de comprimento onde deve-se definir as regras para a criação da senha, segue exemplos:
@@ -172,7 +172,7 @@ const template = '1*Aa' // obrigatório números, caracteres especiais, letras m
 Veja como alterar as configurações padrão abaixo:
 ```javascript
 const configs = {
-    allowSpaces: false // Não permite que o usuário crie uma senha com o caracter <space>
+    allowSpaces: false, // Não permite que o usuário crie uma senha com o caracter <space>
     allowKeyboardSequences: false // Não permite que o usuário crie uma senha com sequências de teclado como: "asd", "123", "!@#", "zxc", etc.
 }
 const rules = {
