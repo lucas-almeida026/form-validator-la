@@ -181,9 +181,21 @@ const doCombinedValidation = (inputToCompare) => {
   }
 }
 
+const createCustomValidation = (funcName, expression) => {
+  if(typeof funcName !== 'string') throw new Error(`validator.createCustomValidator(<funcName>, <expressoin>) <funcName> must be a string`)
+  if(typeof expression !== 'function') throw new Error(`validator.createCustomValidator(<funcName>, <expressoin>) <expression> must be a function`)
+  return () => value => {
+    if(typeof value !== 'string') throw new Error(`validator.${funcName}() expects a string to validate`)
+    if(value === '__myRawValue__') return funcName
+    console.log(expression(value))
+    return expression(value) ? {error: false} : {error: true, message: ''}
+  }
+}
+
 module.exports = {
   doValidations,
   doCombinedValidation,
+  createCustomValidation,
   required,
   minLength,
   maxLength,
