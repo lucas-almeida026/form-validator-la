@@ -1,5 +1,5 @@
 # form-validator-la
-### Este README contem _anchor links_ para uma melhor experiência leia este documento através do [git-hub](https://github.com/lucas-almeida026/form-validator-la/blob/main/README.md 'Open with GitHub')
+### Este README contem _anchor links_ para uma melhor experiência leia este documento através do [git-hub](https://github.com/lucas-almeida026/form-validator-la/blob/main/README.md, 'Open with GitHub')
 form-validator-la é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
