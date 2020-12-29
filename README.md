@@ -145,7 +145,7 @@ alert(myMessage)
 * #### getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
 * #### doValidations => recebe [validationConfigs: object, body: object], retorna error object
 * #### doCombinedValidation => recebe _input_ _reference_, retorna um objeto com 3 funções [equalsTo, differentOf, includedIn], que recebem outra _input reference_ veja mais sobre [aqui](#Validações-Combinadas)
-* #### createCustomValidation => recebe [funcName: string, expression: function], retorna uma função, veja mais sobre [aqui](#Validações-Customizadas)
+* #### createCustomValidation => recebe [funcName: string, expression: function], retorna uma função, veja mais sobre [aqui](#Validações-personalizadas)
 
 ### Implementando validação de complexidade de senha
 #### Escreva o template (obrigatório) e passe um objeto de configurações (opcional)
@@ -199,6 +199,32 @@ const resultComb = validator.doCombinedValidation(document.getElementById('input
     .includedIn(document.getElementById('input2', validator.includedInFlags.treated)
 ```
 
+## Validações personalizadas
+Se for necessário fazer uma verificação que não é diponibilizada de maneira padrão pelo pacote, use a função `createCustomValidation(<funcName>, <expression>)` para criar facilmente sua própria função de validação.
+A `createCustomValidation` espera receber dois parâmetro (obrigatório), <funcName> e <expression>
+<funcName> deve ser uma string que definirá o nome da função, será usado para formar o valor <raw> do objeto de erro, e o parâmetro <expression> deve ser uma função que receber um parâmetro <value> e retorna uma expressão lógina.
+Obs.: validações personalizadas não possuem mensagem no objeto de erro
+Veja a seguir como implementar:
+
+### Criando validações personalizadas
+```javascript
+const myOwnValidation = validator.createCustomValidation('myOwnValidation', value => value === 'foo')
+const rules = {
+    input1: [validator.required(), myOwnValidation()]
+}
+// Neste exemplo a validação personalizada verifica se o valor do input é exatamente igual a "foo"
+// Se o valor for examente igual a "foo" retorna um objeto vazio 
+// Se o valor for diferente de "foo" retorna o seguinte object error
+{
+    error: true
+    message: ''
+    raw: ['input1', 'myOwnValidation']
+}
+
+// Criando minha mensagem apartir de res.raw
+const message = `O campo ${raw[0]} deve ser igual a "foo"`
+alert(message)
+```
 <br/>
 
 ## Exemplo completo
@@ -229,7 +255,7 @@ const onSubmitForm = e => {
 
   const combResult = validator2.doCombinedValidation(document.getElementById('password')).equalsTo(document.getElementById('passwordRepeat'))
 
-  if(combResult) alert('Preencha o campo "reCAPTCHA" corretamente')
+  if(combResult.raw.length > 0) alert('Preencha o campo "reCAPTCHA" corretamente')
 }
 
 function App() {
