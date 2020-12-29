@@ -209,18 +209,27 @@ const onSubmitForm = e => {
   e.preventDefault()
   const fd = new FormData(e.target)
   const body = validator.getBodyObject(fd)
+  const myOwnValidation = validator.createCustomValidation('recaptcha', v => v === document.getElementById('recaptcha').value)
   const rules = {
     name: [validator.required(), validator.minLength(3), validator.maxLength(50)],
     email: [validator.required(), validator.isEmail(), validator.minLength(4), validator.maxLength(50)],
-    password: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})]
+    password: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})],
+    passwordRepeat: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})],
+    recaptcha: [validator.required(), myOwnValidation()]
   }
   const dictionary = {
     name: 'Nome',
     email: 'Email',
-    password: 'Senha'
+    password: 'Senha',
+    passwordRepeat: 'Repita a senha' 
   }
   const result = validator.doValidations({rules, dictionary}, body)
+
   if(result.message) alert(result.message)
+
+  const combResult = validator2.doCombinedValidation(document.getElementById('password')).equalsTo(document.getElementById('passwordRepeat'))
+
+  if(combResult) alert('Preencha o campo "reCAPTCHA" corretamente')
 }
 
 function App() {
