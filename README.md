@@ -1,24 +1,24 @@
-# la-form-validator
+# form-validator-la
 
-la-form-validator é um validador de formulário HTML feito em javascript para front-end. 
+form-validator-la é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
 
 ## Instalação
-`npm i la-form-validator`
+`npm i form-validator-la`
 
 ## Importando o pacote
 
 <!-- Para fazer validações em Node use o [pacote para Nodejs] -->
 
 ```javascript
-import validator from 'la-form-validator'
+import validator from 'form-validator-la'
 ```
 
 ## Como usar
 Veja o exemplo completo [aqui](#Exemplo-completo) (último tópico)
 
-A validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
+As validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
 ```javascript
 function App() {
   return (
@@ -35,7 +35,7 @@ Função onSubmitForm:
 ```javascript
 const onSubmitForm = e => {
   e.preventDefault()
-  const fd = new FormData(e.target)
+  const fd = new FormData(e.target) //Use um FormData para guardar as informações do formulário
   const body = validator.getBodyObject(fd) //Retorna um objeto com chave igual a propriedade name no input e valor igual ao valor digitado no input
   
   //Defina as regras de validação
@@ -43,7 +43,7 @@ const onSubmitForm = e => {
     teste: [validator.required()]
   }
   
-  //Defina o dicionário dos nomes dos campo (OPCIONAL)
+  //Defina o dicionário dos nomes dos campos (OPCIONAL)
   const dictionary = {
     teste: 'Teste'
   } 
@@ -63,7 +63,7 @@ Retorna um objeto vazio: `{}`
 
 Para obter o valor booleano utilize `!!Object.keys(result).length`
 
-### Algum erro de validação:
+### Um ou mais error de validação:
 Retorna o primeiro erro da lista no seguinte formato: 
 ```
 //Exemplo de erro
@@ -77,15 +77,15 @@ Retorna o primeiro erro da lista no seguinte formato:
 ## Definindo as regras de validação
 ### Regras disponíveis:
  * required => campo obrigatório
- * minLength => obrigatório conter um número mínimo de caracteres
- * maxLength => obrigatório conter um número de caracteres menor que o limite
+ * minLength => obrigatório conter um número de caracteres maior que o valor mínimo
+ * maxLength => obrigatório conter um número de caracteres menor que o valor limite
  * isEmail => obrigatório ser um email
  * isJSON => obrigatório ser uma _string_ _JSON_
 
 * As funções minLength e maxLength devem ser chamadas passando o valor de comparação `minLength(min: number)`, `maxLength(max: number)`
 
 ### Como selecionar uma regra:
-No objeto de regras crie uma chave com o nome do campo (mesmo nome do parêmatro _name_ do _input_) e passe um array como valor contendo as regras do campo em questão.
+No objeto de regras crie uma chave com o nome do campo (mesmo nome do parâmetro _name_ do _input_) e passe um array como valor contendo as regras do campo em questão.
 As regras são executadas em ordem sequencial da esquerda para a direita, portanto prefira começar com _required_.
 ```javascript
 //Exemplo
@@ -98,13 +98,15 @@ const rules = {
 ### Para que serve e como o usar o dicionário das opções de validação
 O dicionário das opções de validação serve para personalizar a mensagem de erro.
 Exemplo: Se o _name_ do _input_ é "userName" a mensagem de erro viria assim `O campo "userName" é obrigatório`
-Utilizando o seguinte dicionário 
+Utilizando o dicionário abaixo a menssagem de erro virá: `O campo "Nome de usuário" é obrigatório`
 ```javascript
+//{
+//  <nome no input>: <valor para personalizar a mensagem>
+//}
 const dictionary = {
   userName: "Nome de usuário"
 }
 ```
-Utilizando o dicionário a menssagem de erro vira: `O campo "Nome de usuário" é obrigatório`
 
 ## Raw error
 Caso a menssagem de erro padrão não seja a que você deseja basta utilizar os valores _raw_ para formar sua própria mensagem
@@ -115,7 +117,14 @@ const res = {
   message: 'O campo "Email" não é um email',
   raw: ['email', 'isEmail']
 }
-const myMessage = `O campo marcado com "*" tem que ser um email`
+let myMessage = ''
+switch (res.raw[1]){
+  case 'isEmail':
+    myMessage = 'O campo marcado com "*" deve ser um email'
+  
+  default:
+    myMessage: 'Formuçário inválido'
+}
 alert(myMessage)
 ```
 <br/>
@@ -123,20 +132,22 @@ alert(myMessage)
 ### Funções de validação:
 
 * required => não recebe valor, retorna error object
-* minLength => recebe o valor mínimo, retorna error object
-* maxLength => recebe o valor máximo, retorna error object
+* minLength => recebe o valor mínimo do tipo _number_, retorna error object
+* maxLength => recebe o valor máximo do tipo _number_, retorna error object
 * isEmail => não recebe valor, retorna error object
 * isJSON => não recebe valor, retorna error object
 
 ### Funções complementares:
 
-* getBodyObject => recebe instância de FormData, retorna body object
+* getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
 * doValidations => recebe [validationConfigs, body], retorna error object
 
 <br/>
 
 ## Exemplo completo
 ```javascript
+import validator from 'form-validator-la'
+
 const onSubmitForm = e => {
   e.preventDefault()
   console.log(e.target)
@@ -152,8 +163,22 @@ const onSubmitForm = e => {
     email: 'Email',
     password: 'Senha'
   }
-  const res = validator.doValidations({rules, dictionary}, body)
+  const result = validator.doValidations({rules, dictionary}, body)
+  if(result.message) alert(result.message)
 }
+
+function App() {
+  return (
+    <div>
+      <form onSubmit={e => onSubmitForm(e)}>
+        <input name="teste" type="text" />
+        <input type="submit" />
+      </form>
+    </div>
+  );
+}
+
+export default App;
 ```
 
 ## License

@@ -1,6 +1,6 @@
 {
   "name": "form-validator-la",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Validador de formulários em javascript para formúlários HTML - front-end",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "validar",
     "formulário",
     "validador",
-    "verificar-formulário"
+    "verificar"
   ],
   "author": "lucas_almeida",
   "license": "MIT",
