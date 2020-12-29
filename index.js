@@ -49,7 +49,9 @@ const isJSON = () => value => {
   }
 }
 
-const passwordComplexity = (template, configs = {allowSpaces: true}) => value => {
+const passwordComplexity = (template, _configs) => value => {
+  const configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ..._configs}
+  const blackList = ['asd', 'qwe', '123', '!@#', 'zxc', '1qa', '2ws', '3ed', 'dfg', '098', '345', 'poi', '[];', 'pl,', 'wer', 'sdf', 'xcv']
   if(value === '__myRawValue__') return 'passwordComplexity'
   //-----
   if(typeof template !== 'string') throw new Error('validator.passwordComplexity(template) <template> must be a string')
@@ -57,7 +59,24 @@ const passwordComplexity = (template, configs = {allowSpaces: true}) => value =>
   if(template.length !== 4) throw new Error('validator.passwordComplexity(template) <template> invalid format, please review the documentation')
   if(!!template.replace(/[_aA1*]/g, '').length) throw new Error('validator.passwordComplexity(template) <template> does not match any default options, please review the documentation')
 
+  const splitValue = value => value.length < 3 
+    ? value
+    : Array.from(value).reduce((acm, _, i, arr) => {
+      const group = arr[i+3] ? arr.slice(i, i+3) : []
+      return [...acm, group.join('')].filter(e => e !== '')
+    }, [])
+
+  const verfKeyboardSeq = valueSplited => {
+    return blackList.reduce(
+      (acm, curr) => acm ? acm : valueSplited.reduce((acm2, curr2) => acm2 ? acm2 : curr === curr2, false), false)
+  }
+
   if(!configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
+  if(!configs.allowKeyboardSequences){
+    if(verfKeyboardSeq(splitValue(value))){
+      return {error: true, message: 'O campo # não permite sequências de teclado como: "asd", "qwe", etc.'}
+    }
+  }
 
   const patterns = {
     'a': value => !!value.replace(/[^a-z]/g, '').length,
