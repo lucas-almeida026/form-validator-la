@@ -17,13 +17,13 @@ import validator from 'form-validator-la'
 ```
 
 ## Introdução
-Ao importar o pacote `validator` escolha a foma como vai validar o formulário existem duas formas disponíveis `onSubmit` e `onLeaveInput`.
+Ao importar o pacote `validator` escolha a forma como vai validar o formulário existem duas formas disponíveis `onSubmit` e `onLeaveInput`.
 
 A função onSubmit valida o formulário a partir da captura do evento de submissão do mesmo, veja como implementar `validator.doValidations().onSubmit()` [aqui](#Implementando-onSubmit)
 
 A função onLeaveInput valida o formulário a partir da captura do evento `onFocusOut` dos inputs do formulário, veja como implementar `validator.doValidations().onLeaveInput` [aqui](#Implementando-onLeaveInput)
 
-As duas funções descritas acima retornam um _Observable_, basta se increver no observable retornado para ter acesso aos error do formulário.
+As duas funções descritas acima retornam um _Observable_, basta se increver no observable retornado para ter acesso aos erros de validação do formulário.
 
 
 
@@ -53,7 +53,7 @@ const validationConfigs = {
 
 ### Sobre as regras de validação
 
-Existem 6 regras de validações pré-definidas, mas há a possibilidade de se criar validações personalizadas, vejas como [aqui](#Validações-personalizadas).
+Existem 6 regras de validações pré-definidas, mas há a possibilidade de se criar validações personalizadas, veja como [aqui](#Validações-personalizadas).
 
 As validações pré-definidas são:
 * **required**: torna o campo obrigatório
@@ -70,17 +70,19 @@ Para que as funções `minLength` e `maxLength` funcionem corretamente deve-se p
 
 
 ### Validações combinadas
-Caso seja necessário realizar a comparação do valor de um campo com o valor de outro, como por exemplo verificar se a valor do campo <senha> é igual ao valor de <repetirSenha>, utilize a função `doCombinedValidation`.
+Caso seja necessário realizar a comparação do valor de um campo com o valor de outro, como por exemplo verificar se a valor do campo <_senha_> é igual ao valor de <_repetirSenha_>, utilize a função `doCombinedValidation`.
 
 doCombinedValidation recebe uma referência de um input HTML (obrigatório) e retorna um objeto com três opções:
 
 * **equalsTo**: verifica se o valor do primeiro input é exatamente igual ao valor do segundo input
 * **differentOf**: verifica se o valor do primeiro input é diferente do valor do segundo input
-* **includedIn**: verifica se o valor do segundo input contem o valor do primeiro input, esta função recebe um segundo parâmetro chamado <flag>
+* **includedIn**: verifica se o valor do segundo input contem o valor do primeiro input, esta função recebe um segundo parâmetro chamado <_flag_>
    * Flag pode assumir 3 valores pré-definidos, por padrão caso não seja especificada a comparação será feita usando a flag "literal", Os valores são:
        * **literal**: compara os dois valores literalmente, sem nenhum tratamento
-       * **email**: indicado para comparações envolvendo campos de email
+       * **email**: indicado para comparações envolvendo campos de email, compara os valores ignorando o _host_ do email
        * **treated**: compara os dois valores disconsiderando espaçamentos laterais e letras maiúsculas
+
+Depois de selecionar umas das 3 opções ['equalsTo', 'differentOf', 'includedIn'] passe a referência do segundo input, o input que servirá como base para a comparação.
 
 
 #### Exemplos de validação combinada
@@ -110,6 +112,7 @@ const equalPasswords = validator
 
 ### Validações personalizadas
 Caso as validações pré-definidas não sejam suficientes para o seu problema, use o método `createCustomValidation()` para criar facilmente sua própria regra de validação.
+Obs.: Não é possível criar novas regras para validações combinadas.
 
 createCustomValidation recebe dois parâmetros:
 
@@ -123,7 +126,7 @@ const myValidation = validator.createCustomValidation('myValidation', (value) =>
 ```
 
 ### Objeto de erro
-todas as validações retornam um objeto, caso não haja nenhum erro, de acordo com as regras definidas, o objeto retornado será um objeto vazio: `{}`.
+Todas as validações retornam um objeto, caso não haja nenhum erro, de acordo com as regras definidas, o objeto retornado será um objeto vazio: `{}`.
 Se houver um ou mais erros será retornado um objeto com o seguinte formato:
 ```
 {
@@ -133,10 +136,10 @@ Se houver um ou mais erros será retornado um objeto com o seguinte formato:
 }
 ```
 
-Durante a validação do formuçário, caso a função encontre um erro de validação 
+Durante a validação do formuçário, caso a função encontre um erro de validação ela imediatamente retornará o erro, sendo assim os erros são apresentados seguindo a ordem de declaração.
 
 #### Sobre o valor `raw` do objeto de erro
-Caso a mensagem padrão não seja usável, utilize o valor raw do objeto de erro para compor sua própria mensagem.
+Caso a mensagem padrão não seja útil para o seu caso, utilize o valor raw do objeto de erro para compor sua própria mensagem.
 
 Exemplo:
 ```javascript
@@ -196,7 +199,7 @@ const template = 'a111' // Não gera erros porém a mensagem de erro será: Obri
 
 ## Implementando onSubmit
 Ao utilizar a função onSubmit **É** necessário capturar o evento no elemento
-### Implementação reduzida
+### Implementação reduzida:
 ```javascript
 // Função para validar o formulário
 const onSubmitForm = event => {
@@ -229,7 +232,7 @@ function App(){
 }
 ```
 
-### Implementação completa
+### Implementação extendida:
 ```javascript
 // Função para validar o formulário
 const onSubmitForm = event => {
@@ -300,11 +303,14 @@ function App(){
 
 ## Implementando onLeaveInput
 Ao utilizar a função onLeaveInput **NÃO** é necessário capturar o evento no elemento.
+
 Em ambientes sigle-page-application como React utilize uma IIFE com um `setTimeout` para invocar a função. (Esta funcionalidade está sendo reconstruida para ser mais facil de implementa-la)
 
 IMPORTNTE: Ao utilizar `onLeaveInput` certifique-se de que todos os inputs do formulário possuem as propriedades "name" e "id" e que as duas possuem o mesmo valor, caso contrário uma exceção será lançada.
 
-### Implementação reduzida
+
+
+### Implementação reduzida:
 ```javascript
 // Função de validação do formulário
 (() => setTimeout(() => {
@@ -340,7 +346,7 @@ function App(){
 ```
 
 
-### Implementação completa
+### Implementação extendida:
 ```javascript
 // Função de validação do formulário
 (() => setTimeout(() => {
