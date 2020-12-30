@@ -1,3 +1,10 @@
+function Observable() {this.observers = []}
+Observable.prototype = {
+  subscribe: function (fn) {this.observers.push(fn)},
+  unsubscribe: function (fn) {this.observers = this.observers.filter(e => e !== fn)},
+  notify: function (e) {this.observers.forEach(fn => fn(e))},
+}
+
 const includedInFlags = {
   email: 'email',
   treated: 'treated',
@@ -112,6 +119,7 @@ const getBodyObject = form => {
   return Object.fromEntries(Array.from(formData))
 }
 
+
 const doValidations = validationConfigs => {
   if(!validationConfigs) throw new Error('validator.doValidations() expect an object <validationConfigs>')
   if(typeof validationConfigs !== 'object') throw new Error('validator.doValidations() expect an object <validationConfigs>')
@@ -145,6 +153,7 @@ const doValidations = validationConfigs => {
   }
 
   const onLeaveInput = form => {
+    const onLeaveObservable = new Observable()
     const body = getBodyObject(form)
     const ids = Object.entries(body).map(e => e[0])
     const inputs = ids.map(id => {
@@ -154,30 +163,33 @@ const doValidations = validationConfigs => {
       if(input.tagName !== 'INPUT')  throw new Error(`<...>.onLeaveInput() expect a input HTML element reference with id: ${id}`)
       return input
     })
-    console.log(form)
-    inputs.map(e => {
-      e.addEventListener('focusout', e => {
+    inputs.map(input => {
+      input.addEventListener('focusout', e => {
         const rules = validationConfigs.rules
         const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
         const target = e.target.name
         const value = e.target.value
-        console.log(rules[target].reduce((acm, fn) => {
-          const result = fn(value)
-          if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
-          if(result.error && !acm.error){
-            const message = dictionary[target]
-              ? result.message.replace('#', `"${dictionary[target]}"`)
-              : result.message.replace('#', `"${target}"`)
-            return {
-              error: true,
-              raw: [target, fn('__myRawValue__')],
-              message
+        if(rules[target] !== undefined){
+          const result = rules[target].reduce((acm, fn) => {
+            const result = fn(value)
+            if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
+            if(result.error && !acm.error){
+              const message = dictionary[target]
+                ? result.message.replace('#', `"${dictionary[target]}"`)
+                : result.message.replace('#', `"${target}"`)
+              return {
+                error: true,
+                raw: [target, fn('__myRawValue__')],
+                message
+              }
             }
-          }
-          return {...acm}
-        }, {}))
+            return {...acm}
+          }, {})
+          onLeaveObservable.notify(result)
+        }        
       })
     })
+    return onLeaveObservable
   }
 
   return {
@@ -240,7 +252,6 @@ const createCustomValidation = (funcName, expression) => {
   return () => value => {
     if(typeof value !== 'string') throw new Error(`validator.${funcName}() expects a string to validate`)
     if(value === '__myRawValue__') return funcName
-    console.log(expression(value))
     return expression(value) ? {error: false} : {error: true, message: ''}
   }
 }
@@ -257,4 +268,3 @@ module.exports = {
   isJSON,
   passwordComplexity
 }
-
