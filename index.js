@@ -104,33 +104,86 @@ const passwordComplexity = (template, _configs) => value => {
   return rules.every(fn => fn(value)) ? {error: false} : {error: true, message: `O campo # exige a existência de ${joinMessage(stringTypes)}`}
 }
 
-const getBodyObject = formData => Object.fromEntries(Array.from(formData))
+const getBodyObject = form => {
+  if(!form) throw new Error('validator.doValidations() expect a form instance <form>')
+  if(!form.tagName) throw new Error('validator.doValidations() expect a form instance <form>')
+  if(form.tagName !== 'FORM') throw new Error('validator.doValidations() expect a form instance <form>')
+  const formData = new FormData(form)
+  return Object.fromEntries(Array.from(formData))
+}
 
-const doValidations = (validationConfigs, body) => {
-  if(!validationConfigs) throw new Error('validator.doValidations() expect a object "validationConfigs"')
-  if(!body) throw new Error('validator.doValidations() expect a object "body"')
-  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect a object "validationConfigs" with a object "rules"')
-  const rules = Object.entries(validationConfigs.rules)
-  const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
-  return rules.reduce((acm, curr) => {
-    const value = body[curr[0]]
-    if(!acm.error) return curr[1].reduce((acm2, curr2) => {
-      const result = curr2(value)
-      if(result)
+const doValidations = validationConfigs => {
+  if(!validationConfigs) throw new Error('validator.doValidations() expect an object <validationConfigs>')
+  if(typeof validationConfigs !== 'object') throw new Error('validator.doValidations() expect an object <validationConfigs>')
+  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect an object <validationConfigs> with a key <rules>')
+  if(typeof validationConfigs.rules !== 'object') throw new Error('validator.doValidations() <validationConfigs.rules> must be an object')
+
+  const onSubmit = form => {
+    const body = getBodyObject(form)
+    const rules = Object.entries(validationConfigs.rules)
+    const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+    return rules.reduce((acm, curr) => {
+      if(body[curr[0]] === undefined) throw new Error('validator.doValidations() <rules> must contain the exact values of input name')
+      const value = body[curr[0]]
+      if(!acm.error) return curr[1].reduce((acm2, fn) => {
+        const result = fn(value)
+        if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
         if(result.error && !acm2.error){
           const message = dictionary[curr[0]]
             ? result.message.replace('#', `"${dictionary[curr[0]]}"`) 
             : result.message.replace('#', `"${curr[0]}"`)
           return {
             error: true, 
-            raw: [curr[0], curr2('__myRawValue__')],
+            raw: [curr[0], fn('__myRawValue__')],
             message
           }
         }                   
-      return acm2
+        return acm2
+      }, {})
+      return acm
     }, {})
-    return acm
-  }, {})
+  }
+
+  const onLeaveInput = form => {
+    const body = getBodyObject(form)
+    const ids = Object.entries(body).map(e => e[0])
+    const inputs = ids.map(id => {
+      const input = document.getElementById(id)
+      if(input === undefined) throw new Error(`<...>.onLeaveInput() expect a HTML element reference with id: ${id}`)
+      if(!input.tagName)  throw new Error(`<...>.onLeaveInput() expect a HTML element reference with id: ${id}`)
+      if(input.tagName !== 'INPUT')  throw new Error(`<...>.onLeaveInput() expect a input HTML element reference with id: ${id}`)
+      return input
+    })
+    console.log(form)
+    inputs.map(e => {
+      e.addEventListener('focusout', e => {
+        const rules = validationConfigs.rules
+        const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+        const target = e.target.name
+        const value = e.target.value
+        console.log(rules[target].reduce((acm, fn) => {
+          const result = fn(value)
+          if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
+          if(result.error && !acm.error){
+            const message = dictionary[target]
+              ? result.message.replace('#', `"${dictionary[target]}"`)
+              : result.message.replace('#', `"${target}"`)
+            return {
+              error: true,
+              raw: [target, fn('__myRawValue__')],
+              message
+            }
+          }
+          return {...acm}
+        }, {}))
+      })
+    })
+  }
+
+  return {
+    onSubmit,
+    onLeaveInput
+  }
 }
 
 const doCombinedValidation = (inputToCompare) => {
@@ -196,13 +249,12 @@ module.exports = {
   doValidations,
   doCombinedValidation,
   createCustomValidation,
+  includedInFlags,
   required,
   minLength,
   maxLength,
   isEmail,
   isJSON,
-  passwordComplexity,
-  getBodyObject,
-  includedInFlags
+  passwordComplexity
 }
 
