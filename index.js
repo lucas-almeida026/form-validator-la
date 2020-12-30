@@ -1,3 +1,10 @@
+function Observable() {this.observers = []}
+Observable.prototype = {
+  subscribe: function (fn) {this.observers.push(fn)},
+  unsubscribe: function (fn) {this.observers = this.observers.filter(e => e !== fn)},
+  notify: function (e) {this.observers.forEach(fn => fn(e))},
+}
+
 const includedInFlags = {
   email: 'email',
   treated: 'treated',
@@ -49,8 +56,8 @@ const isJSON = () => value => {
   }
 }
 
-const passwordComplexity = (template, _configs) => value => {
-  const configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ..._configs}
+const passwordComplexity = (template, configs) => value => {
+  const _configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ...configs}
   const blackList = ['asd', 'qwe', '123', '!@#', 'zxc', '1qa', '2ws', '3ed', 'dfg', '098', '345', 'poi', '[];', 'pl,', 'wer', 'sdf', 'xcv']
   if(value === '__myRawValue__') return 'passwordComplexity'
   //-----
@@ -71,8 +78,8 @@ const passwordComplexity = (template, _configs) => value => {
       (acm, curr) => acm ? acm : valueSplited.reduce((acm2, curr2) => acm2 ? acm2 : curr === curr2, false), false)
   }
 
-  if(!configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
-  if(!configs.allowKeyboardSequences){
+  if(!_configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
+  if(!_configs.allowKeyboardSequences){
     if(verfKeyboardSeq(splitValue(value))){
       return {error: true, message: 'O campo # não permite sequências de teclado como: "asd", "qwe", etc.'}
     }
@@ -104,33 +111,94 @@ const passwordComplexity = (template, _configs) => value => {
   return rules.every(fn => fn(value)) ? {error: false} : {error: true, message: `O campo # exige a existência de ${joinMessage(stringTypes)}`}
 }
 
-const getBodyObject = formData => Object.fromEntries(Array.from(formData))
+const getBodyObject = form => {
+  if(!form) throw new Error('validator.doValidations() expect a form instance <form>')
+  if(!form.tagName) throw new Error('validator.doValidations() expect a form instance <form>')
+  if(form.tagName !== 'FORM') throw new Error('validator.doValidations() expect a form instance <form>')
+  const formData = new FormData(form)
+  return Object.fromEntries(Array.from(formData))
+}
 
-const doValidations = (validationConfigs, body) => {
-  if(!validationConfigs) throw new Error('validator.doValidations() expect a object "validationConfigs"')
-  if(!body) throw new Error('validator.doValidations() expect a object "body"')
-  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect a object "validationConfigs" with a object "rules"')
-  const rules = Object.entries(validationConfigs.rules)
-  const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
-  return rules.reduce((acm, curr) => {
-    const value = body[curr[0]]
-    if(!acm.error) return curr[1].reduce((acm2, curr2) => {
-      const result = curr2(value)
-      if(result)
+
+const doValidations = validationConfigs => {
+  if(!validationConfigs) throw new Error('validator.doValidations() expect an object <validationConfigs>')
+  if(typeof validationConfigs !== 'object') throw new Error('validator.doValidations() expect an object <validationConfigs>')
+  if(!validationConfigs.rules) throw new Error('validator.doValidations() expect an object <validationConfigs> with a key <rules>')
+  if(typeof validationConfigs.rules !== 'object') throw new Error('validator.doValidations() <validationConfigs.rules> must be an object')
+
+  const onSubmit = form => {
+    const onSubmitObservable = new Observable()
+    const body = getBodyObject(form)
+    const rules = Object.entries(validationConfigs.rules)
+    const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+    const result = rules.reduce((acm, curr) => {
+      if(body[curr[0]] === undefined) throw new Error('validator.doValidations() <rules> must contain the exact values of input name')
+      const value = body[curr[0]]
+      if(!acm.error) return curr[1].reduce((acm2, fn) => {
+        const result = fn(value)
+        if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
         if(result.error && !acm2.error){
           const message = dictionary[curr[0]]
             ? result.message.replace('#', `"${dictionary[curr[0]]}"`) 
             : result.message.replace('#', `"${curr[0]}"`)
           return {
             error: true, 
-            raw: [curr[0], curr2('__myRawValue__')],
+            raw: [curr[0], fn('__myRawValue__')],
             message
           }
         }                   
-      return acm2
+        return acm2
+      }, {})
+      return acm
     }, {})
-    return acm
-  }, {})
+    setTimeout(() => onSubmitObservable.notify(result), 10)
+    return onSubmitObservable
+  }
+
+  const onLeaveInput = form => {
+    const onLeaveObservable = new Observable()
+    const body = getBodyObject(form)
+    const ids = Object.entries(body).map(e => e[0])
+    const inputs = ids.map(id => {
+      const input = document.getElementById(id)
+      if(input === undefined) throw new Error(`<...>.onLeaveInput() expect a HTML element reference with id: ${id}`)
+      if(!input.tagName)  throw new Error(`<...>.onLeaveInput() expect a HTML element reference with id: ${id}`)
+      if(input.tagName !== 'INPUT')  throw new Error(`<...>.onLeaveInput() expect a input HTML element reference with id: ${id}`)
+      return input
+    })
+    inputs.map(input => {
+      input.addEventListener('focusout', e => {
+        const rules = validationConfigs.rules
+        const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+        const target = e.target.name
+        const value = e.target.value
+        if(rules[target] !== undefined){
+          const result = rules[target].reduce((acm, fn) => {
+            const result = fn(value)
+            if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
+            if(result.error && !acm.error){
+              const message = dictionary[target]
+                ? result.message.replace('#', `"${dictionary[target]}"`)
+                : result.message.replace('#', `"${target}"`)
+              return {
+                error: true,
+                raw: [target, fn('__myRawValue__')],
+                message
+              }
+            }
+            return {...acm}
+          }, {})
+          onLeaveObservable.notify(result)
+        }        
+      })
+    })
+    return onLeaveObservable
+  }
+
+  return {
+    onSubmit,
+    onLeaveInput
+  }
 }
 
 const doCombinedValidation = (inputToCompare) => {
@@ -187,7 +255,6 @@ const createCustomValidation = (funcName, expression) => {
   return () => value => {
     if(typeof value !== 'string') throw new Error(`validator.${funcName}() expects a string to validate`)
     if(value === '__myRawValue__') return funcName
-    console.log(expression(value))
     return expression(value) ? {error: false} : {error: true, message: ''}
   }
 }
@@ -196,13 +263,11 @@ module.exports = {
   doValidations,
   doCombinedValidation,
   createCustomValidation,
+  includedInFlags,
   required,
   minLength,
   maxLength,
   isEmail,
   isJSON,
-  passwordComplexity,
-  getBodyObject,
-  includedInFlags
+  passwordComplexity
 }
-
