@@ -3,7 +3,6 @@
 form-validator-la é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
-
 ## Instalação
 ```bash
 npm i form-validator-la
@@ -17,260 +16,399 @@ npm i form-validator-la
 import validator from 'form-validator-la'
 ```
 
-## Como usar
-Veja o exemplo completo [aqui](#Exemplo-completo) (último tópico)
+## Introdução
+Ao importar o pacote `validator` escolha a forma como vai validar o formulário existem duas formas disponíveis `onSubmit` e `onLeaveInput`.
 
-As validações do formulário serão feitas após o evento de _submit_ para validar o formulário primeiro capture o evento
+A função onSubmit valida o formulário a partir da captura do evento de submissão do mesmo, veja como implementar `validator.doValidations().onSubmit()` [aqui](#Implementando-onSubmit)
+
+A função onLeaveInput valida o formulário a partir da captura do evento `onFocusOut` dos inputs do formulário, veja como implementar `validator.doValidations().onLeaveInput` [aqui](#Implementando-onLeaveInput)
+
+As duas funções descritas acima retornam um _Observable_, basta se increver no observable retornado para ter acesso aos erros de validação do formulário.
+
+
+
+## Definindo as configurações de validação
+
+Para validar um formulário é necessário criar um objeto com as configurações de validação contendo um objeto de regras(OBRIGATÓRIO) e um dicionário(OPCIONAL) e depois chamar o método `doValidations` para receber o observable.
+
+* rules: Define as regras de validação
+
+* dictionary(OPCIONAL):  Define o dicionário para traduzir o nome do input, usado para personalizar a mensagem de erro
+
+
+
+### Criando o objeto de configurações de validação
 ```javascript
-function App() {
+const validationConfigs = {
+  rules: {
+    userName: [validator.required(), validator.minLength(3), validator.maxLength(50)],
+    userEmail: [validator.required(), validator.isEmail(), validator.minLength(4), validator.maxLength(50)],
+  },
+  dictionary: {
+    userName: 'Nome',
+    userEmail: 'Email'
+  }
+}
+```
+
+### Sobre as regras de validação
+
+Existem 6 regras de validações pré-definidas, mas há a possibilidade de se criar validações personalizadas, veja como [aqui](#Validações-personalizadas).
+
+As validações pré-definidas são:
+* **required**: torna o campo obrigatório
+* **minLength**: estabelece um número mínimo de caracteres para o campo
+* **maxLength**: estabelece um número máximo de caracteres para o campo
+* **isEmail**: verifica se o valor preenchido é um email (não verifica se o email é válido, apenas se é um email)
+* **isJSON**: verifica se o valor preenchido é um JSON,
+* **passwordComplexity**: estabelece regras para a criação de senahs (veja como implementar esta validação [aqui](#Implementando-passwordComplexity))
+
+#### IMPORTANTE:
+As funções são executadas na ordem de declaração (da esquerda para a direita), portanto prefira começar pela validação **required**.
+
+Para que as funções `minLength` e `maxLength` funcionem corretamente deve-se passar o valor mínimo e o valor máximo, respectivamente, na criação das regras, como no exemplo do [tópico anterior](#Criando-o-objeto-de-configurações-de-validação)
+
+
+### Validações combinadas
+Caso seja necessário realizar a comparação do valor de um campo com o valor de outro, como por exemplo verificar se a valor do campo <_senha_> é igual ao valor de <_repetirSenha_>, utilize a função `doCombinedValidation`.
+
+doCombinedValidation recebe uma referência de um input HTML (obrigatório) e retorna um objeto com três opções:
+
+* **equalsTo**: verifica se o valor do primeiro input é exatamente igual ao valor do segundo input
+* **differentOf**: verifica se o valor do primeiro input é diferente do valor do segundo input
+* **includedIn**: verifica se o valor do segundo input contem o valor do primeiro input, esta função recebe um segundo parâmetro chamado <_flag_>
+   * Flag pode assumir 3 valores pré-definidos, por padrão caso não seja especificada a comparação será feita usando a flag "literal", Os valores são:
+       * **literal**: compara os dois valores literalmente, sem nenhum tratamento
+       * **email**: indicado para comparações envolvendo campos de email, compara os valores ignorando o _host_ do email
+       * **treated**: compara os dois valores disconsiderando espaçamentos laterais e letras maiúsculas
+
+Depois de selecionar umas das 3 opções ['equalsTo', 'differentOf', 'includedIn'] passe a referência do segundo input, o input que servirá como base para a comparação.
+
+
+#### Exemplos de validação combinada
+```javascript
+const nameInvalid = validator
+  .doCombinedValidation(document.getElementById('name'))
+  .equalsTo(document.getElementById('lastName'))
+// Verifica se o valor do input <name> é igual ao valor do input <lastName>
+
+const passwordWithEmail = validator
+  .doCombinedValidation(document.getElementById('email'))
+  .includedIn(document.getElementById('password'), validator.includedInFlags.email)
+// Verifica se o valor do input <password> contem o valor do input <email> ignorando espaços laterais e letter case e a terminação do email ["@gmail.com", "@hotmail.com", etc.]
+
+const passwordWithName = validator
+  .doCombinedValidation(document.getElementById('name'))
+  .includedIn(document.getElementById('password'), validator.includedInFlags.treated)
+// Verifica se o valor do input <password> contem o valor do input <name> ignorando espaços laterais e letter case
+
+const equalPasswords = validator
+  .doCombinedValidation(document.getElementById('password'))
+  .differentOf(document.getElementById('repeatPassword'))
+// Verifica se o valor do input <password> é diferente do valor do input <repeatPassword>
+
+```
+
+
+### Validações personalizadas
+Caso as validações pré-definidas não sejam suficientes para o seu problema, use o método `createCustomValidation()` para criar facilmente sua própria regra de validação.
+Obs.: Não é possível criar novas regras para validações combinadas.
+
+createCustomValidation recebe dois parâmetros:
+
+* funcName: O nome da função
+* expression: Uma função que recebe um valor <value> e retorna um expressão lógica
+
+Exemplo:
+```javascript
+const myValidation = validator.createCustomValidation('myValidation', (value) => value === 'foo')
+// No exemplo acima <myValidation> verifica se o valor digitado no campo é exatamente igual a "foo"
+```
+
+### Objeto de erro
+Todas as validações retornam um objeto, caso não haja nenhum erro, de acordo com as regras definidas, o objeto retornado será um objeto vazio: `{}`.
+Se houver um ou mais erros será retornado um objeto com o seguinte formato:
+```
+{
+  error: true,
+  message: <Mensagem informando o campo que está errado e qual erro foi apontado>,
+  raw: [<nomeDoCampo>, <erroApontado>]
+}
+```
+
+Durante a validação do formuçário, caso a função encontre um erro de validação ela imediatamente retornará o erro, sendo assim os erros são apresentados seguindo a ordem de declaração.
+
+#### Sobre o valor `raw` do objeto de erro
+Caso a mensagem padrão não seja útil para o seu caso, utilize o valor raw do objeto de erro para compor sua própria mensagem.
+
+Exemplo:
+```javascript
+let myMessage
+switch (objError.raw[1]){
+  case 'myValidation':
+    myMessage = `O campo ${objError.raw[0]} deve ter valor exatamente igual a "foo"`
+    return
+
+  default:
+    return
+}
+```
+
+
+## Implementando passwordComplexity
+Como dito anteriormente passwordComplexity pode ser utilizada para verificar a complexidade de uma senha, esta função recebe dois parâmetros na inicialização:
+
+* template: Valor do tipo string, é o que define o mínimo de complexidade de senha aceita
+* configs(OPCIONAL): Um objeto com duas propriedades que por padrão são setadas com _true_(permitido):
+   * allowSpaces: permite ou bloqueia o uso do caracter <_space_> em uma senha
+   * allowKeyboardSequences: permite ou bloqueia o uso de sequências de teclado como "asd", "123", "!@#", etc.
+
+A propriedade template deve ser do tipo _string_ e deve conter 4 caracteres de comprimento. Para formar o template utilize uma combinação dos caracteres reservados ['a', 'A', '1', '*', '_'] cada um possui um significado:
+
+* 'a': torna obrigatório o uso de letras minúsculas
+* 'A': torna obrigatório o uso de letras maiúsculas
+* '1': torna obrigatório o uso de números
+* '*': torna obrigatório o uso de caracteres especiais
+* '_': NÃO torna obrigatório
+
+Exmplo de utilização:
+```javascript
+const template = 'aA1_' //Este template torna obrigatório o uso de letras minúsculas, letras maiúsculas e números
+const configs = {
+  allowSpaces: false
+}
+const rules = {
+  input1: [validator.required(), validator.passwordComplexity(template, configs)]
+}
+```
+
+Um pouco mais sobre templates:
+```javascript
+const template = '____' // Não torna nada obrigatório
+const template = 'a___' // Tona obrigatório o uso de letras minúsculas
+const template = 'aA__' // Tona obrigatório o uso de letras minúsculas e letras maiúsculas
+const template = 'aA1_' // Tona obrigatório o uso de letras minúsculas, letras maiúsculas e números
+const template = 'aA1*' // Tona obrigatório o uso de letras minúsculas, letras maiúsculas, números e caracteres especiais
+const template = '1*Aa' // Tona obrigatório o uso de números, caracteres especiais, letras maiúsculas e letras minúsculas
+
+// Como visto no exmplo acima alterar a ordem dos caracteres do template altera a ordem de verificação e a mensagem de erro
+
+const template = 'a111' // Não gera erros porém a mensagem de erro será: Obrigatório o uso de letras minúsculas, números, números e números
+```
+
+
+## Implementando onSubmit
+Ao utilizar a função onSubmit **É** necessário capturar o evento no elemento
+### Implementação reduzida:
+```javascript
+// Função para validar o formulário
+const onSubmitForm = event => {
+  event.preventDefault()
+  const rules = {
+    name: [validator.required(), validator.minLength(3), validator.maxLength(20)],
+    email: [validator.required(), validator.isEmail()]
+  }
+
+  validator
+    .doValidations({rules})
+    .onSubmit(document.getElementById('form'))
+    .subscribe(res => {
+      if(res.error) alert(res.error)
+      goToOtherFunction()
+    })
+}
+
+// Capturando o evento de submissão para alimentar a função acima
+function App(){
   return (
-    <div>
+    <>
       <form onSubmit={e => onSubmitForm(e)}>
-        <input name="teste" type="text" />
+        <input id="name" name="name" type="text" />
+        <input id="email" name="email" type="text" />
         <input type="submit" />
       </form>
-    </div>
-  );
+    </>
+  )
 }
 ```
-Função onSubmitForm:
+
+### Implementação extendida:
 ```javascript
-const onSubmitForm = e => {
-  e.preventDefault()
-  const fd = new FormData(e.target) //Use um FormData para guardar as informações do formulário
-  const body = validator.getBodyObject(fd) //Retorna um objeto com chave igual a propriedade name no input e valor igual ao valor digitado no input
-  
-  //Defina as regras de validação
+// Função para validar o formulário
+const onSubmitForm = event => {
+  event.preventDefault()
+  const myValidation = validator.createCustomValidation('recaptcha', value => value === recaptcha.value)
+
   const rules = {
-    teste: [validator.required()]
+    name: [validator.required(), validator.minLength(3), validator.maxLength(20)],
+    email: [validator.required(), validator.isEmail()],
+    password: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+    repeatPassword: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+    recaptcha: [validator.required(), myValidation()]
   }
-  
-  //Defina o dicionário dos nomes dos campos (OPCIONAL)
-  const dictionary = {
-    teste: 'Teste'
-  } 
-  
-  //Crie o objeto de configurações
-  const validationConfigs = {
-    rules,
-    dictionary
-  }
-  
-  //Execute a operação
-  const result = validator.doValidations(validationConfigs, body)
-```
 
-## Definindo as regras de validação
-### Regras disponíveis:
- * required => campo obrigatório
- * minLength => obrigatório conter um número de caracteres maior que o valor mínimo
- * maxLength => obrigatório conter um número de caracteres menor que o valor limite
- * isEmail => obrigatório ser um email
- * isJSON => obrigatório ser uma _string_ _JSON_
- * passwordComplexiy => define regras para a criação de uma senha
-
-### Como selecionar uma regra:
-No objeto de regras crie uma chave com o nome do campo (mesmo nome do parâmetro _name_ do _input_) e passe um array como valor contendo as regras do campo em questão.
-As regras são executadas em ordem sequencial da esquerda para a direita, portanto prefira começar com _required_.
-```javascript
-//Exemplo
-const rules = {
-  fieldName: [validator.required(), validator.minLength(3)]
-}
-```
-
-## Definindo o dicionário (opcional)
-### Para que serve e como o usar o dicionário das opções de validação
-O dicionário das opções de validação serve para personalizar a mensagem de erro.
-Exemplo: Se o _name_ do _input_ é "userName" a mensagem de erro viria assim `O campo "userName" é obrigatório`
-Utilizando o dicionário abaixo a menssagem de erro virá: `O campo "Nome de usuário" é obrigatório`
-```javascript
-//{
-//  <nome no input>: <valor para personalizar a mensagem>
-//}
-const dictionary = {
-  userName: "Nome de usuário"
-}
-```
-## Respostas
-### Nehum erro de validação:
-Retorna um objeto vazio: `{}`
-
-Para obter o valor booleano utilize `!!Object.keys(result).length`
-
-### Um ou mais error de validação:
-Retorna o primeiro erro da lista no seguinte formato: 
-```
-//Exemplo de erro
-{
-  error: true,
-  message: "O campo "Teste" é obrigatório",
-  raw: ["teste", "required"]
-}
-```
-
-## Raw error
-Caso a menssagem de erro padrão não seja a que você deseja basta utilizar os valores _raw_ para formar sua própria mensagem
-```javascript
-//Exemplo
-const res = {
-  error: true,
-  message: 'O campo "Email" não é um email',
-  raw: ['email', 'isEmail']
-}
-let myMessage = ''
-switch (res.raw[1]){
-  case 'isEmail':
-    myMessage = 'O campo marcado com "*" deve ser um email'
-  
-  default:
-    myMessage: 'Formuçário inválido'
-}
-alert(myMessage)
-```
-<br/>
-
-## Funções de validação:
-
-* #### required => não recebe valor, retorna um error object
-* #### minLength => recebe o valor mínimo do tipo _number_, retorna um error object
-* #### maxLength => recebe o valor máximo do tipo _number_, retorna um error object
-* #### isEmail => não recebe valor, retorna um error object
-* #### isJSON => não recebe valor, retorna um error object
-* #### passwordComplexity => recebe dois valores template do tipo _string_ e configs do tipo _object_, retorna um error object
-
-
-## Funções complementares:
-
-* #### getBodyObject => recebe instância de _FormData_, retorna um objeto com chave e valor referente aos campos do formulário
-* #### doValidations => recebe [validationConfigs: object, body: object], retorna error object
-* #### doCombinedValidation => recebe _input_ _reference_, retorna um objeto com 3 funções [equalsTo, differentOf, includedIn], que recebem outra _input reference_ veja mais sobre [aqui](#Validações-Combinadas)
-* #### createCustomValidation => recebe [funcName: string, expression: function], retorna uma função, veja mais sobre [aqui](#Validações-personalizadas)
-
-### Implementando validação de complexidade de senha
-#### Escreva o template (obrigatório) e passe um objeto de configurações (opcional)
-#### Template:
-É uma string que deve ter obrigatoriamente 4 caracteres de comprimento onde deve-se definir as regras para a criação da senha, segue exemplos:
-```javascript
-/*
-caracteres reservados: ['a', 'A', '1', '*', '_']
-a = letras minúsculas
-A = letras maiúsculas
-1 = números
-* = caracteres especiais
-_ = nada
-*/
-const template = '____' // nenhuma regra
-const template = 'a___' // obrigatório letras minúsculas
-const template = 'aA__' // obrigatório letras minúsculas e maiúsculas
-const template = 'aA1_' // obrigatório letras minúsculas, maiúsculas e números
-const template = 'aA1*' // obrigatório letras minúsculas, maiúsculas, números e caracteres especiais
-const template = 'a1__' // obrigatório letras minúscuas e números
-const template = '1*Aa' // obrigatório números, caracteres especiais, letras maiúsculas e letras minúsculas
-// A ordem dos caracteres do template altera a ordem de verificação e a mensagem de erro, como no exemplo acima.
-```
-#### Configs:
-É um objeto que define duas propriedades `allowSpaces` e `allowKeyboardSequences` que por padrão são setadas como true.
-Veja como alterar as configurações padrão abaixo:
-```javascript
-const template = 'aA__'
-const configs = {
-    allowSpaces: false, // Não permite que o usuário crie uma senha com o caracter <space>
-    allowKeyboardSequences: false // Não permite que o usuário crie uma senha com sequências de teclado como: "asd", "123", "!@#", "zxc", etc.
-}
-const rules = {
-    password: [validator.passwordComplexity(template, configs)]
-}
-```
-
-## Validações combinadas
-A função de validações combinadas recebe uma _input reference_ (valor a ser comparado) e retorna um objeto com três funções [equalsTo, differentOf, includedIn];
-equalsTo recebe outra _input reference_ (valor para comparar) e retorna true ou false;
-differentOf recebe outra _input reference_ (valor para comparar) e retorna true ou false;
-includedIn recebe outra _input reference_ (valor para comparar) <obrigatório> e o parâmetro _flag_ <opcional, default = validator.includedInFlags.literal> que pode ser obtido a partir de `validator.includedInFlags` e retorna true ou false;
-validator.includedInFlags é um objeto que contém 3 valores [email, treated, literal]:
-* email: indicado para comparações de 1 ou 2 campos do tipo email
-* treated: compara os valores dos inputs aplicando as funções `String.trim()` e `String.toLowerCase()`
-* literal: valor padrão, compara os valores dos inputs sem nenhum tipo de tratamento
-
-### Aplicando validações combinadas
-```javascript
-const resultComb = validator.doCombinedValidation(document.getElementById('input1'))
-    .includedIn(document.getElementById('input2', validator.includedInFlags.treated)
-```
-
-## Validações personalizadas
-Se for necessário fazer uma verificação que não é diponibilizada de maneira padrão pelo pacote, use a função `createCustomValidation(<funcName>, <expression>)` para criar facilmente sua própria função de validação.
-A `createCustomValidation` espera receber dois parâmetro (obrigatório), <funcName> e <expression>
-<funcName> deve ser uma string que definirá o nome da função, será usado para formar o valor <raw> do objeto de erro, e o parâmetro <expression> deve ser uma função que receber um parâmetro <value> e retorna uma expressão lógina.
-Obs.: validações personalizadas não possuem mensagem no objeto de erro
-Veja a seguir como implementar:
-
-### Criando validações personalizadas
-```javascript
-const myOwnValidation = validator.createCustomValidation('myOwnValidation', value => value === 'foo')
-const rules = {
-    input1: [validator.required(), myOwnValidation()]
-}
-// Neste exemplo a validação personalizada verifica se o valor do input é exatamente igual a "foo"
-// Se o valor for examente igual a "foo" retorna um objeto vazio 
-// Se o valor for diferente de "foo" retorna o seguinte object error
-{
-    error: true
-    message: ''
-    raw: ['input1', 'myOwnValidation']
-}
-
-// Criando minha mensagem apartir de res.raw
-const message = `O campo ${raw[0]} deve ser igual a "foo"`
-alert(message)
-```
-<br/>
-
-## Exemplo completo
-```javascript
-import validator from 'form-validator-la'
-
-const onSubmitForm = e => {
-  e.preventDefault()
-  const fd = new FormData(e.target)
-  const body = validator.getBodyObject(fd)
-  const myOwnValidation = validator.createCustomValidation('recaptcha', v => v === document.getElementById('recaptcha').value)
-  const rules = {
-    name: [validator.required(), validator.minLength(3), validator.maxLength(50)],
-    email: [validator.required(), validator.isEmail(), validator.minLength(4), validator.maxLength(50)],
-    password: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})],
-    passwordRepeat: [validator.required(), validator.minLength(8), validator.maxLength(32), validator.passwordComplexity('aA1*', {allowSpaces: false})],
-    recaptcha: [validator.required(), myOwnValidation()]
-  }
   const dictionary = {
     name: 'Nome',
     email: 'Email',
     password: 'Senha',
-    passwordRepeat: 'Repita a senha' 
+    repeatPassword: 'Repita a senha',
+    recaptcha: 'reCAPTCHA'
   }
-  const result = validator.doValidations({rules, dictionary}, body)
 
-  if(result.message) alert(result.message)
+  validator
+    .doValidations({rules, dictionary})
+    .onSubmit(document.getElementById('form'))
+    .subscribe(res => {
+      if(res.error){
+        alert(res.error)
+      }else{
+        const equalPasswords = validator
+          .doCombinedValidation(document.getElementById('password'))
+          .equalsTo(document.getElementById('repeatPassword'))
 
-  const combResult = validator2.doCombinedValidation(document.getElementById('password')).equalsTo(document.getElementById('passwordRepeat'))
+        const nameInPassword = validator
+          .doCombinedValidation(document.getElementById('name'))
+          .includedIn(document.getElementById('password'), validator.includedInFlags.treated)
 
-  if(combResult.raw.length > 0) alert('Preencha o campo "reCAPTCHA" corretamente')
+        if(!equalPasswords){
+          alert(msg)
+            return
+        }
+        if(nameInPassword){
+          alert(msg)
+            return
+        }
+        goToOtherFunction()
+      }
+    })
 }
 
-function App() {
+// Capturando o evento de submissão para alimentar a função acima
+function App(){
   return (
-    <div>
+    <>
       <form onSubmit={e => onSubmitForm(e)}>
-        <input name="teste" type="text" />
+        <input id="name" name="name" type="text" />
+        <input id="email" name="email" type="text" />
+        <input id="password" name="password" type="password" />
+        <input id="repeatPassword" name="repeatPassword" type="password" />
+        <input id="recaptcha" name="recaptcha" type="text" />
         <input type="submit" />
       </form>
-    </div>
-  );
+    </>
+  )
 }
-
-export default App;
 ```
 
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
+
+## Implementando onLeaveInput
+Ao utilizar a função onLeaveInput **NÃO** é necessário capturar o evento no elemento.
+
+Em ambientes sigle-page-application como React utilize uma IIFE com um `setTimeout` para invocar a função. (Esta funcionalidade está sendo reconstruida para ser mais facil de implementa-la)
+
+IMPORTNTE: Ao utilizar `onLeaveInput` certifique-se de que todos os inputs do formulário possuem as propriedades "name" e "id" e que as duas possuem o mesmo valor, caso contrário uma exceção será lançada.
+
+
+
+### Implementação reduzida:
+```javascript
+// Função de validação do formulário
+(() => setTimeout(() => {
+  const rules = {
+    email: [validator.required(), validator.isEmail()],
+    password: [validator.required(), validator.minLength(8)]
+  }
+
+  validator
+    .doValidations({rules})
+    .onLeaveInput(document.getElementById('form'))  
+    .subscribe(res => {
+      if(res.error){
+        alert(res.message)
+        return
+      }
+      goToNextFunc()
+    })  
+}, 50))()
+
+// Componente
+function App(){
+  return (
+    <>
+      <form id="form">
+        <input id="email" name="email" type="text" />
+        <input id="password" name="password" type="password" />
+        <input type="submit" />
+      </form>
+    </>
+  )
+}
+```
+
+
+### Implementação extendida:
+```javascript
+// Função de validação do formulário
+(() => setTimeout(() => {
+  const myValidation = validator.createCustomValidation('recaptcha', value => value === recaptcha.value)
+
+  const rules = {
+    name: [validator.required(), validator.minLength(3), validator.maxLength(20)],
+    email: [validator.required(), validator.isEmail()],
+    password: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+    repeatPassword: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+    recaptcha: [validator.required(), myValidation()]
+  }
+
+  const dictionary = {
+    name: 'Nome',
+    email: 'Email',
+    password: 'Senha',
+    repeatPassword: 'Repita a senha',
+    recaptcha: 'reCAPTCHA'
+  }
+
+  validator
+    .doValidations({rules, dictionary})
+    .onLeaveInput(document.getElementById('form'))
+    .subscribe(res => {
+      if(res.error){
+        alert(res.error)
+      }else{
+        const equalPasswords = validator
+          .doCombinedValidation(document.getElementById('password'))
+          .equalsTo(document.getElementById('repeatPassword'))
+
+        const nameInPassword = validator
+          .doCombinedValidation(document.getElementById('name'))
+          .includedIn(document.getElementById('password'), validator.includedInFlags.treated)
+
+        if(!equalPasswords){
+          alert(msg)
+            return
+        }
+        if(nameInPassword){
+          alert(msg)
+            return
+        }
+        goToOtherFunction()
+      }
+    })  
+}, 50))()
+
+// Component
+function App(){
+  return (
+    <>
+      <form id="form">
+        <input id="name" name="name" type="text" />
+        <input id="email" name="email" type="text" />
+        <input id="password" name="password" type="password" />
+        <input id="repeatPassword" name="password" type="password" />
+        <input id="recaptcha" name="recaptcha" type="text" />
+        <input type="submit" />
+      </form>
+    </>
+  )
+}
+```

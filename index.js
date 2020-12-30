@@ -56,8 +56,8 @@ const isJSON = () => value => {
   }
 }
 
-const passwordComplexity = (template, _configs) => value => {
-  const configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ..._configs}
+const passwordComplexity = (template, configs) => value => {
+  const _configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ...configs}
   const blackList = ['asd', 'qwe', '123', '!@#', 'zxc', '1qa', '2ws', '3ed', 'dfg', '098', '345', 'poi', '[];', 'pl,', 'wer', 'sdf', 'xcv']
   if(value === '__myRawValue__') return 'passwordComplexity'
   //-----
@@ -78,8 +78,8 @@ const passwordComplexity = (template, _configs) => value => {
       (acm, curr) => acm ? acm : valueSplited.reduce((acm2, curr2) => acm2 ? acm2 : curr === curr2, false), false)
   }
 
-  if(!configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
-  if(!configs.allowKeyboardSequences){
+  if(!_configs.allowSpaces) return {error: true, message: 'O campo # não permite espaços " " '}
+  if(!_configs.allowKeyboardSequences){
     if(verfKeyboardSeq(splitValue(value))){
       return {error: true, message: 'O campo # não permite sequências de teclado como: "asd", "qwe", etc.'}
     }
@@ -127,10 +127,11 @@ const doValidations = validationConfigs => {
   if(typeof validationConfigs.rules !== 'object') throw new Error('validator.doValidations() <validationConfigs.rules> must be an object')
 
   const onSubmit = form => {
+    const onSubmitObservable = new Observable()
     const body = getBodyObject(form)
     const rules = Object.entries(validationConfigs.rules)
     const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
-    return rules.reduce((acm, curr) => {
+    const result = rules.reduce((acm, curr) => {
       if(body[curr[0]] === undefined) throw new Error('validator.doValidations() <rules> must contain the exact values of input name')
       const value = body[curr[0]]
       if(!acm.error) return curr[1].reduce((acm2, fn) => {
@@ -150,6 +151,8 @@ const doValidations = validationConfigs => {
       }, {})
       return acm
     }, {})
+    setTimeout(() => onSubmitObservable.notify(result), 10)
+    return onSubmitObservable
   }
 
   const onLeaveInput = form => {
