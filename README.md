@@ -198,7 +198,7 @@ const template = 'a111' // Não gera erros porém a mensagem de erro será: Obri
 
 
 ## Implementando onSubmit
-Ao utilizar a função onSubmit **É** necessário capturar o evento no elemento
+Ao utilizar a função onSubmit é necessário capturar o evento _onSubmit_ no elemento
 ### Implementação reduzida:
 ```javascript
 // Função para validar o formulário
@@ -302,9 +302,14 @@ function App(){
 
 
 ## Implementando onLeaveInput
-Ao utilizar a função onLeaveInput **NÃO** é necessário capturar o evento no elemento.
+Ao utilizar a função onLeaveInput é necessário capturar o evento _onLoad_ do elemento.
 
-Em ambientes sigle-page-application como React utilize uma IIFE com um `setTimeout` para invocar a função. (Esta funcionalidade está sendo reconstruida para ser mais facil de implementa-la)
+EM ambientes single-page-application é necessário esperar o elemento carregar na página para então começar a observa-lo, para isso utilize a função `validator.afterLoad()`.
+
+validator.afterLoad() recebe dois parâmetros:
+
+* formId: do tipo string, serve para identificar o formulário a ser observado
+* callback: do tipo function, será invocada assim que o formulário for carregado
 
 IMPORTNTE: Ao utilizar `onLeaveInput` certifique-se de que todos os inputs do formulário possuem as propriedades "name" e "id" e que as duas possuem o mesmo valor, caso contrário uma exceção será lançada.
 
@@ -313,29 +318,24 @@ IMPORTNTE: Ao utilizar `onLeaveInput` certifique-se de que todos os inputs do fo
 ### Implementação reduzida:
 ```javascript
 // Função de validação do formulário
-(() => setTimeout(() => {
+const validateForm = () => {
   const rules = {
     email: [validator.required(), validator.isEmail()],
     password: [validator.required(), validator.minLength(8)]
   }
-
   validator
     .doValidations({rules})
     .onLeaveInput(document.getElementById('form'))  
     .subscribe(res => {
-      if(res.error){
-        alert(res.message)
-        return
-      }
-      goToNextFunc()
-    })  
-}, 50))()
+      console.log(res)
+    })
+}
 
 // Componente
 function App(){
   return (
     <>
-      <form id="form">
+      <form id="form" onLoad={validator.afterLoad('form', validateForm)}>
         <input id="email" name="email" type="text" />
         <input id="password" name="password" type="password" />
         <input type="submit" />
@@ -349,58 +349,57 @@ function App(){
 ### Implementação extendida:
 ```javascript
 // Função de validação do formulário
-(() => setTimeout(() => {
-  const myValidation = validator.createCustomValidation('recaptcha', value => value === recaptcha.value)
+const validateForm = () => {
+const myValidation = validator.createCustomValidation('recaptcha', value => value === recaptcha.value)
 
-  const rules = {
-    name: [validator.required(), validator.minLength(3), validator.maxLength(20)],
-    email: [validator.required(), validator.isEmail()],
-    password: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
-    repeatPassword: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
-    recaptcha: [validator.required(), myValidation()]
-  }
+const rules = {
+  name: [validator.required(), validator.minLength(3), validator.maxLength(20)],
+  email: [validator.required(), validator.isEmail()],
+  password: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+  repeatPassword: [validator.required(), validator.minLength(8), validator.maxLength(64), validator.passwordComplexity('aA1_', {allowSpaces: false})],
+  recaptcha: [validator.required(), myValidation()]
+}
 
-  const dictionary = {
-    name: 'Nome',
-    email: 'Email',
-    password: 'Senha',
-    repeatPassword: 'Repita a senha',
-    recaptcha: 'reCAPTCHA'
-  }
+const dictionary = {
+  name: 'Nome',
+  email: 'Email',
+  password: 'Senha',
+  repeatPassword: 'Repita a senha',
+  recaptcha: 'reCAPTCHA'
+}
 
-  validator
-    .doValidations({rules, dictionary})
-    .onLeaveInput(document.getElementById('form'))
-    .subscribe(res => {
-      if(res.error){
-        alert(res.error)
-      }else{
-        const equalPasswords = validator
-          .doCombinedValidation(document.getElementById('password'))
-          .equalsTo(document.getElementById('repeatPassword'))
+validator
+  .doValidations({rules, dictionary})
+  .onLeaveInput(document.getElementById('form'))
+  .subscribe(res => {
+    if(res.error){
+      alert(res.error)
+    }else{
+      const equalPasswords = validator
+        .doCombinedValidation(document.getElementById('password'))
+        .equalsTo(document.getElementById('repeatPassword'))
 
-        const nameInPassword = validator
-          .doCombinedValidation(document.getElementById('name'))
-          .includedIn(document.getElementById('password'), validator.includedInFlags.treated)
+      const nameInPassword = validator
+        .doCombinedValidation(document.getElementById('name'))
+        .includedIn(document.getElementById('password'), validator.includedInFlags.treated)
 
-        if(!equalPasswords){
-          alert(msg)
-            return
-        }
-        if(nameInPassword){
-          alert(msg)
-            return
-        }
-        goToOtherFunction()
+      if(!equalPasswords){
+        alert(msg)
+          return
       }
-    })  
-}, 50))()
+      if(nameInPassword){
+        alert(msg)
+          return
+      }
+      goToOtherFunction()
+    }
+  }
 
 // Component
 function App(){
   return (
     <>
-      <form id="form">
+      <form id="form" onLoad={validator.afterLoad('form', validateForm)}>
         <input id="name" name="name" type="text" />
         <input id="email" name="email" type="text" />
         <input id="password" name="password" type="password" />

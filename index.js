@@ -1,8 +1,28 @@
+function EventListenerRecorder() {this.eventList = []}
+EventListenerRecorder.prototype = {
+  getListOfListeners: function (id, eventName = '') {
+    return this.eventList.filter(e => e.id === id && e.eventName === eventName)
+  },
+  registerEventListener: function (id, eventName) {this.eventList.push({id, eventName})},
+  hasEventListener: function (id, eventName) {return !!this.getListOfListeners(id, eventName).length}
+}
+const globalEventRecorder = new EventListenerRecorder()
+
 function Observable() {this.observers = []}
 Observable.prototype = {
   subscribe: function (fn) {this.observers.push(fn)},
   unsubscribe: function (fn) {this.observers = this.observers.filter(e => e !== fn)},
   notify: function (e) {this.observers.forEach(fn => fn(e))},
+  clear: function () {this.observers = []}
+}
+
+const afterLoad = (formId, callback) => {
+  const interval = setInterval(() => {
+    if(document.getElementById(formId) !== null){
+      callback()
+      clearInterval(interval)
+    }
+  }, 10)
 }
 
 const includedInFlags = {
@@ -154,8 +174,8 @@ const doValidations = validationConfigs => {
     setTimeout(() => onSubmitObservable.notify(result), 10)
     return onSubmitObservable
   }
-
-  const onLeaveInput = form => {
+  
+  const onLeaveInput = form => {    
     const onLeaveObservable = new Observable()
     const body = getBodyObject(form)
     const ids = Object.entries(body).map(e => e[0])
@@ -167,30 +187,33 @@ const doValidations = validationConfigs => {
       return input
     })
     inputs.map(input => {
-      input.addEventListener('focusout', e => {
-        const rules = validationConfigs.rules
-        const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
-        const target = e.target.name
-        const value = e.target.value
-        if(rules[target] !== undefined){
-          const result = rules[target].reduce((acm, fn) => {
-            const result = fn(value)
-            if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
-            if(result.error && !acm.error){
-              const message = dictionary[target]
-                ? result.message.replace('#', `"${dictionary[target]}"`)
-                : result.message.replace('#', `"${target}"`)
-              return {
-                error: true,
-                raw: [target, fn('__myRawValue__')],
-                message
+      if(!globalEventRecorder.hasEventListener(`input:${input.name}`, 'focusout')){
+        globalEventRecorder.registerEventListener(`input:${input.name}`, 'focusout')
+        input.addEventListener('focusout', e => {          
+          const rules = validationConfigs.rules
+          const dictionary = !!validationConfigs.dictionary ? validationConfigs.dictionary : false
+          const target = e.target.name
+          const value = e.target.value
+          if(rules[target] !== undefined){
+            const result = rules[target].reduce((acm, fn) => {
+              const result = fn(value)
+              if(!result) throw new Error(`Impossible to resolve, report the problem: validator.${fn('__myRawValue__')}`)
+              if(result.error && !acm.error){
+                const message = dictionary[target]
+                  ? result.message.replace('#', `"${dictionary[target]}"`)
+                  : result.message.replace('#', `"${target}"`)
+                return {
+                  error: true,
+                  raw: [target, fn('__myRawValue__')],
+                  message
+                }
               }
-            }
-            return {...acm}
-          }, {})
-          onLeaveObservable.notify(result)
-        }        
-      })
+              return {...acm}
+            }, {})
+            onLeaveObservable.notify(result)
+          }        
+        })
+      }
     })
     return onLeaveObservable
   }
@@ -263,6 +286,7 @@ module.exports = {
   doValidations,
   doCombinedValidation,
   createCustomValidation,
+  afterLoad,
   includedInFlags,
   required,
   minLength,
