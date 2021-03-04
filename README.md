@@ -1,5 +1,5 @@
 # form-validator-la
-### Este README contem _anchor links_ para uma melhor experiência leia este documento através do [git-hub](https://github.com/lucas-almeida026/form-validator-la/blob/main/README.md, 'Open with GitHub')
+### Este README contem _anchor links_ para uma melhor experiência leia este documento através do [git-hub](https://github.com/lucas-almeida026/form-validator-la/blob/main/README.md 'Open with GitHub')
 form-validator-la é um validador de formulário HTML feito em javascript para front-end. 
 Os exemplos serão feitos em React.
 
@@ -29,11 +29,11 @@ As duas funções descritas acima retornam um _Observable_, basta se increver no
 
 ## Definindo as configurações de validação
 
-Para validar um formulário é necessário criar um objeto com as configurações de validação contendo um objeto de regras(OBRIGATÓRIO) e um dicionário(OPCIONAL) e depois chamar o método `doValidations` para receber o observable.
+Para validar um formulário é necessário criar um objeto com as configurações de validação contendo um objeto de regras (OBRIGATÓRIO) e um dicionário (OPCIONAL) e depois chamar o método `doValidations` para receber o observable.
 
 * rules: Define as regras de validação
 
-* dictionary(OPCIONAL):  Define o dicionário para traduzir o nome do input, usado para personalizar a mensagem de erro
+* dictionary (OPCIONAL):  Define o dicionário para traduzir o nome do input, usado para personalizar a mensagem de erro
 
 
 
@@ -61,7 +61,7 @@ As validações pré-definidas são:
 * **maxLength**: estabelece um número máximo de caracteres para o campo
 * **isEmail**: verifica se o valor preenchido é um email (não verifica se o email é válido, apenas se é um email)
 * **isJSON**: verifica se o valor preenchido é um JSON,
-* **passwordComplexity**: estabelece regras para a criação de senahs (veja como implementar esta validação [aqui](#Implementando-passwordComplexity))
+* **passwordComplexity**: estabelece regras para a criação de senhas (veja como implementar esta validação [aqui](#Implementando-passwordComplexity))
 
 #### IMPORTANTE:
 As funções são executadas na ordem de declaração (da esquerda para a direita), portanto prefira começar pela validação **required**.
@@ -80,7 +80,7 @@ doCombinedValidation recebe uma referência de um input HTML (obrigatório) e re
    * Flag pode assumir 3 valores pré-definidos, por padrão caso não seja especificada a comparação será feita usando a flag "literal", Os valores são:
        * **literal**: compara os dois valores literalmente, sem nenhum tratamento
        * **email**: indicado para comparações envolvendo campos de email, compara os valores ignorando o _host_ do email
-       * **treated**: compara os dois valores disconsiderando espaçamentos laterais e letras maiúsculas
+       * **treated**: compara os dois valores desconsiderando espaçamentos laterais e letras maiúsculas
 
 Depois de selecionar umas das 3 opções ['equalsTo', 'differentOf', 'includedIn'] passe a referência do segundo input, o input que servirá como base para a comparação.
 
@@ -159,7 +159,7 @@ switch (objError.raw[1]){
 Como dito anteriormente passwordComplexity pode ser utilizada para verificar a complexidade de uma senha, esta função recebe dois parâmetros na inicialização:
 
 * template: Valor do tipo string, é o que define o mínimo de complexidade de senha aceita
-* configs(OPCIONAL): Um objeto com duas propriedades que por padrão são setadas com _true_(permitido):
+* configs (OPCIONAL): Um objeto com duas propriedades que por padrão são setadas com _true_ (permitido):
    * allowSpaces: permite ou bloqueia o uso do caracter <_space_> em uma senha
    * allowKeyboardSequences: permite ou bloqueia o uso de sequências de teclado como "asd", "123", "!@#", etc.
 
@@ -193,7 +193,7 @@ const template = '1*Aa' // Tona obrigatório o uso de números, caracteres espec
 
 // Como visto no exmplo acima alterar a ordem dos caracteres do template altera a ordem de verificação e a mensagem de erro
 
-const template = 'a111' // Não gera erros porém a mensagem de erro será: Obrigatório o uso de letras minúsculas, números, números e números
+const template = 'a111' // Gera uma exceção, pois um template não pode ter caracteres de e obrigatoriedade repetidos. (O único caractere que pode ser repetido é o underline "_")
 ```
 
 
@@ -304,7 +304,7 @@ function App(){
 ## Implementando onLeaveInput
 Ao utilizar a função onLeaveInput é necessário capturar o evento _onLoad_ do elemento.
 
-EM ambientes single-page-application é necessário esperar o elemento carregar na página para então começar a observa-lo, para isso utilize a função `validator.afterLoad()`.
+Em ambientes single-page-application é necessário esperar o elemento carregar na página para então começar a observa-lo, para isso utilize a função `validator.afterLoad()`.
 
 validator.afterLoad() recebe dois parâmetros:
 

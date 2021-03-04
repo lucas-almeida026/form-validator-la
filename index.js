@@ -77,6 +77,19 @@ const isJSON = () => value => {
 }
 
 const passwordComplexity = (template, configs) => value => {
+  //analize repeated characters
+  const charsPredefined = ['a', 'A', '1', '*']
+  let str = template
+  while(str.includes('_'))
+    str = str.replace('_', '')
+  
+  for(let i = 0; i < charsPredefined.length; i++){
+    if (str.replace(charsPredefined[i], '').includes(charsPredefined[i])){
+      throw new Error(`a template cannot have mandatory characters repeated`)
+    }
+  }
+  //------
+
   const _configs = {...{allowSpaces: true, allowKeyboardSequences: true}, ...configs}
   const blackList = ['asd', 'qwe', '123', '!@#', 'zxc', '1qa', '2ws', '3ed', 'dfg', '098', '345', 'poi', '[];', 'pl,', 'wer', 'sdf', 'xcv']
   if(value === '__myRawValue__') return 'passwordComplexity'
